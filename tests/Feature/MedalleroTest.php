@@ -233,6 +233,40 @@ class MedalleroTest extends TestCase
         $this->assertStringContainsString('Compuesto AA2 Femenino (1): no está incluido en la clasificación de Compuesto Femenino, sin inscriptos (CW)', $texto);
     }
 
+    public function test_acoples_mal_hechos(): void
+    {
+        // el torneo armado con el Sub-21 masculino acoplado a Recurvo Femenino
+        Artisan::call('medallero', ['archivo' => $this->export('ADASJ26X_TORNEO_MAL.ianseo')]);
+        $texto = Artisan::output();
+        $this->assertStringContainsString('Recurvo Masculino Sub-21 (2): está en más de una eliminatoria (RM, RW)', $texto);
+        $this->assertStringContainsString('RW: acopla categorías de otro sexo (RU21M (2)) a RW', $texto);
+        $this->assertStringContainsString('Recurvo Femenino Sub-21 (1): sin eliminatoria propia y no fue incluido en la de Mayores R/W', $texto);
+
+        // y otros acoples agregados a mano al torneo bien armado
+        $g = unserialize(gzuncompress(file_get_contents($this->export('ADASJ26X_TORNEO_4.ianseo'))), ['allowed_classes' => false]);
+        $acoplar = function (string $evento, string $div, string $clase) use (&$g) {
+            $g['EventClass'][] = ['EcCode' => $evento, 'EcClass' => $clase, 'EcDivision' => $div] + $g['EventClass'][0];
+            $ind = $g['Individuals'][0];
+            foreach ($g['Entries'] as $e) {
+                if ($e['EnDivision'] == $div && $e['EnClass'] == $clase) $g['Individuals'][] = ['IndId' => $e['EnId'], 'IndEvent' => $evento] + $ind;
+            }
+        };
+        $acoplar('RM', 'R', '50M');      // 50+ a Mayores: no previsto
+        $acoplar('RU18M', 'R', 'M');     // Mayores a Sub-18: al revés
+        $acoplar('RU18E30', 'R', 'U18E50'); // JP de otra distancia
+        $ruta = tempnam(sys_get_temp_dir(), 'acoples');
+        file_put_contents($ruta, gzcompress(serialize($g)));
+        Artisan::call('medallero', ['archivo' => $ruta]);
+        $texto = Artisan::output();
+        unlink($ruta);
+        $this->assertStringContainsString('RM: acople no previsto en las normas (R50M (5) a RM). Solo se incluyen en Mayores los Sub-21 de Recurvo', $texto);
+        $this->assertStringContainsString('RU18M: acopla Mayores (RM (9)) a RU18M; es al revés', $texto);
+        $this->assertStringContainsString('RU18E30: acopla categorías de otra distancia (RU18E50 (1)) a RU18E30; en JP', $texto);
+        // los avisos y el armado van en el orden del guion: JP, Escuela y después el resto
+        $this->assertLessThan(strpos($texto, 'RU18M: acopla Mayores'), strpos($texto, 'RU18E30: acopla'));
+        $this->assertLessThan(strpos($texto, '  Recurvo Masculino (RM) |'), strpos($texto, '  Recurvo Escuela E60 (RE60) |'));
+    }
+
     public function test_comando_de_consola(): void
     {
         $this->artisan('medallero', ['archivo' => $this->export('FSJ-1810-FINAL-ORO-PLATA-BRONCE.ianseo')])

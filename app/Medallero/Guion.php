@@ -168,7 +168,23 @@ final class Guion
 
 	private static function bloque(string $cat, string $nombre, ?string $subtitulo, array $medallas, array $pases, bool $propio, bool $sala): array
 	{
-		[$div, $clase] = explode('/', $cat, 2);
+		$orden = self::orden($cat, $sala, $propio, $nombre);
+		return [
+			'grupo' => $orden[0],
+			'orden' => $orden,
+			'nombre' => $nombre,
+			'subtitulo' => $subtitulo,
+			'pases' => $pases,
+			'destino' => $pases ? Informe::siguiente($pases[0]) : null,
+			'medallas' => $medallas,
+		];
+	}
+
+	// Clave de orden de la ceremonia para una categoría (la usan también el anexo y el control del armado):
+	// [grupo, arco, edad, dificultad, adaptado, propio, nombre]
+	public static function orden(string $cat, bool $sala, bool $propio = false, string $nombre = ''): array
+	{
+		[$div, $clase] = explode('/', $cat, 2) + [1 => ''];
 		$adaptado = isset(self::ARCO_ADAPTADO[$div]) ? 1 : 0;
 		$arco = self::ARCOS[self::ARCO_ADAPTADO[$div] ?? $div] ?? 99;
 
@@ -185,15 +201,7 @@ final class Guion
 		}
 
 		// el acople entre pares va antes que el podio propio de la misma categoría
-		return [
-			'grupo' => $grupo,
-			'orden' => [$grupo, $arco, ...$nivel, $adaptado, $propio ? 1 : 0, $nombre],
-			'nombre' => $nombre,
-			'subtitulo' => $subtitulo,
-			'pases' => $pases,
-			'destino' => $pases ? Informe::siguiente($pases[0]) : null,
-			'medallas' => $medallas,
-		];
+		return [$grupo, $arco, ...$nivel, $adaptado, $propio ? 1 : 0, $nombre];
 	}
 
 	// aire libre: más cerca es más fácil (I15 < I20 < E20 < E30...); salón: blanco más grande es más fácil

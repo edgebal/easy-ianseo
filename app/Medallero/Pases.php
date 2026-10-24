@@ -75,7 +75,9 @@ final class Pases
 				$out[] = $fila;
 			}
 		}
-		usort($out, fn($a, $b) => [$b['pasa'], $a['programa'], $a['categoria'], $b['puntaje']] <=> [$a['pasa'], $b['programa'], $b['categoria'], $a['puntaje']]);
+		// categorías en el orden del guion
+		$sala = $this->t->modalidad == 'sala';
+		usort($out, fn($a, $b) => [$b['pasa'], Guion::orden($a['categoria'], $sala), $b['puntaje']] <=> [$a['pasa'], Guion::orden($b['categoria'], $sala), $a['puntaje']]);
 		return $out;
 	}
 }

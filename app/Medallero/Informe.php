@@ -21,7 +21,7 @@ final class Informe
 		public readonly array $avisos,
 		public readonly array $pases,
 		public readonly bool $previo,  // torneo sin puntajes: solo sirve el control del armado
-		public readonly array $armado, // todos los podios (terminados o no), en el orden de los eventos
+		public readonly array $armado, // todos los podios (terminados o no), en el orden del guion
 	) {}
 
 	public static function generar(string $archivo, string $archivoNormas): self
@@ -30,6 +30,9 @@ final class Informe
 		$normas = require $archivoNormas;
 		$t = IanseoExport::leer($archivo);
 		$podios = (new Medallero($t, $normas))->calcular();
+		// en el orden del guion (el anexo y el control del armado se leen igual que la entrega)
+		$orden = fn($p) => Guion::orden($p['propia'] ?? $p['categorias'][0], $t->modalidad == 'sala', $p['tipo'] == 'categoria', $p['nombre']);
+		usort($podios, fn($a, $b) => $orden($a) <=> $orden($b));
 
 		$x = $t->torneo;
 		$torneo = [
