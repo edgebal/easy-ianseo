@@ -60,6 +60,11 @@
 .medalla.oro { background: var(--oro); }
 .medalla.plata { background: var(--plata); }
 .medalla.bronce { background: var(--bronce); }
+/* el pase se anuncia junto con la medalla */
+.pase {
+    display: inline-block; margin-left: 6px; padding: 0 6px; border: 1.5px solid currentColor; border-radius: 4px;
+    font-size: 12px; font-weight: 700; line-height: 19px; text-transform: uppercase; letter-spacing: .05em; white-space: nowrap;
+}
 
 .selector {
     border: 1px solid var(--linea); border-radius: 8px; background: var(--papel);
@@ -73,7 +78,10 @@
 body:has(#modo-dos:checked) .modo-una { display: none; }
 body:has(#modo-dos:checked) .modo-dos { display: block; }
 /* JP con menos de 3 sin eliminatoria: el art. 14.4 no los premia, algunos clubes sí */
-.bloque .sin-medallas { display: none; }
+.bloque .sin-medallas, .pases.todos-con-medalla, .pases li.con-medalla, .pase.solo-sin-opcional { display: none; }
+body:has(#jp-menos-de-3:not(:checked)) .pase.solo-sin-opcional { display: inline-block; }
+body:has(#jp-menos-de-3:not(:checked)) .pases.todos-con-medalla { display: block; }
+body:has(#jp-menos-de-3:not(:checked)) .pases li.con-medalla { display: list-item; }
 body:has(#jp-menos-de-3:not(:checked)) .bloque.opcional .medallas { display: none; }
 body:has(#jp-menos-de-3:not(:checked)) .bloque.opcional .sin-medallas { display: block; }
 body:has(#jp-menos-de-3:not(:checked)) .bloque.solo-medallas,

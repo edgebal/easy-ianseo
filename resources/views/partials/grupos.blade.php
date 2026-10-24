@@ -15,12 +15,15 @@
                 @if ($b['opcional'])<div class="sub sin-medallas">sin medallas: menos de 3 arqueros y sin eliminatoria (art. 14.4)</div>@endif
 
                 @if ($b['pases'])
-                    <div class="titulo-pases">Pases de categoría ({{ str_starts_with($b['destino'], 'sin ') ? $b['destino'] : 'a ' . $b['destino'] }}):</div>
-                    <ul>
-                        @foreach ($b['pases'] as $x)
-                            <li>{{ $x['nombre'] }} <span class="club">{{ $x['club'] }}</span>@if (!empty($x['logro'])) <span class="anota">({{ $x['logro'] }})</span>@endif</li>
-                        @endforeach
-                    </ul>
+                    {{-- con_medalla: en podios opcionales, el medallista se anuncia con la medalla; acá solo si no se entregan --}}
+                    <div @class(['pases', 'todos-con-medalla' => !array_filter($b['pases'], fn ($x) => empty($x['con_medalla']))])>
+                        <div class="titulo-pases">Pases de categoría ({{ str_starts_with($b['destino'], 'sin ') ? $b['destino'] : 'a ' . $b['destino'] }}):</div>
+                        <ul>
+                            @foreach ($b['pases'] as $x)
+                                <li @class(['con-medalla' => !empty($x['con_medalla'])])>{{ $x['nombre'] }} <span class="club">{{ $x['club'] }}</span>@if (!empty($x['logro'])) <span class="anota">({{ $x['logro'] }})</span>@endif</li>
+                            @endforeach
+                        </ul>
+                    </div>
                 @endif
 
                 @if ($b['medallas'])
@@ -33,7 +36,7 @@
                                     @if ($a['otra_categoria'])<span class="anota">({{ $a['otra_categoria'] }})</span>@endif
                                     <span class="club">{{ $a['club'] }}</span>
                                     @if ($a['pase'])
-                                        <span class="anota">(y pase de categoría{{ !empty($a['pase']['logro']) ? ' — ' . $a['pase']['logro'] : '' }})</span>
+                                        <span @class(['pase', 'solo-sin-opcional' => !empty($a['pase']['solo_sin_opcional'])])>Pase ({{ $a['pase']['puntaje'] }}){{ !empty($a['pase']['logro']) ? ' · ' . $a['pase']['logro'] : '' }}</span>
                                     @endif
                                 </span>
                             </li>

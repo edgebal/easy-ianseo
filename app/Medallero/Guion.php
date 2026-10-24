@@ -11,7 +11,8 @@ namespace App\Medallero;
 //
 // Los pases de una categoría van en el bloque de su podio propio; si el arquero además tiene
 // medalla en ese podio, no se lo repite en los pases sino que se anota en su línea. En los podios
-// opcionales (JP con menos de 3, que se pueden no entregar) los pases se listan todos igual.
+// opcionales (JP con menos de 3, que se pueden no entregar) el medallista queda también en la lista de
+// pases, marcado con_medalla: la página lo muestra ahí solo cuando esas medallas no se entregan.
 
 final class Guion
 {
@@ -41,12 +42,15 @@ final class Guion
 
 			$medallas = [];
 			foreach (array_reverse($p['podio']) as $a) { // Bronce → Plata → Oro
-				$pase = !$p['opcional'] && in_array($a['id'], $idsPase, true) ? $pases[array_search($a['id'], $idsPase)] : null;
+				$pase = in_array($a['id'], $idsPase, true) ? $pases[array_search($a['id'], $idsPase)] : null;
 				// en eventos acoplados se aclara la categoría de quien no es de la que recibió
 				$otraCat = $a['categoria'] != $cat ? $p['nombres_categorias'][$a['categoria']] : null;
 				$medallas[] = $a + ['pase' => $pase, 'otra_categoria' => $otraCat];
 			}
-			$sinRepetir = $p['opcional'] ? $pases : array_values(array_filter($pases, fn($x) => !in_array($x['id'], $enPodio, true)));
+			$conMedalla = fn($x) => in_array($x['id'], $enPodio, true);
+			$sinRepetir = $p['opcional']
+				? array_map(fn($x) => $x + ['con_medalla' => $conMedalla($x)], $pases)
+				: array_values(array_filter($pases, fn($x) => !$conMedalla($x)));
 			$bloques[] = self::bloque($cat, $p['nombre'], self::subtitulo($p), $medallas, $sinRepetir, $p['tipo'] == 'categoria', $sala)
 				+ ['eliminatorias' => $p['eliminatorias'], 'categorias' => $p['categorias'], 'opcional' => $p['opcional']];
 		}
@@ -58,6 +62,7 @@ final class Guion
 		}
 
 		usort($bloques, fn($a, $b) => $a['orden'] <=> $b['orden']);
+		self::paseConMedallaDeOtroPodio($bloques);
 
 		$grupos = [];
 		foreach ($bloques as $b) $grupos[$b['grupo']][] = $b;
@@ -82,6 +87,31 @@ final class Guion
 			}
 		}
 		return array_filter($tandas);
+	}
+
+	// Un acoplado que tiene medalla en la eliminatoria de otra categoría recibe el pase con esa medalla,
+	// salvo que ya lo reciba con la de su podio propio. Si ese podio propio es opcional, en la otra medalla
+	// el pase se anuncia solo cuando el opcional no se entrega (solo_sin_opcional).
+	private static function paseConMedallaDeOtroPodio(array &$bloques): void
+	{
+		$medallaDe = []; // id => [bloque, medalla] en podios que siempre se entregan, el primero de la ceremonia
+		foreach ($bloques as $i => $b) {
+			if ($b['opcional']) continue;
+			foreach ($b['medallas'] as $j => $a) $medallaDe[$a['id']] ??= [$i, $j];
+		}
+		foreach ($bloques as $i => &$b) {
+			$enPropio = array_column(array_filter($b['medallas'], fn($a) => $a['pase']), 'id');
+			foreach ($b['pases'] as $k => $x) {
+				[$oi, $oj] = $medallaDe[$x['id']] ?? [null, null];
+				if ($oi === null || $oi == $i) continue;
+				$propia = in_array($x['id'], $enPropio, true);
+				if ($propia && !$b['opcional']) continue;
+				$bloques[$oi]['medallas'][$oj]['pase'] = $x + ['solo_sin_opcional' => $propia];
+				unset($b['pases'][$k]);
+			}
+			$b['pases'] = array_values($b['pases']);
+		}
+		unset($b);
 	}
 
 	private static function bloque(string $cat, string $nombre, ?string $subtitulo, array $medallas, array $pases, bool $propio, bool $sala): array

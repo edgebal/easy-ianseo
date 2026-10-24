@@ -3,6 +3,7 @@
 use App\Medallero\ArchivoInvalido;
 use App\Medallero\Informe;
 use App\Medallero\Reporte;
+use App\Medallero\TextoDePagina;
 use Illuminate\Support\Facades\Artisan;
 
 Artisan::command('medallero {archivo : export .ianseo del torneo} {--json : salida en JSON}', function (string $archivo) {
@@ -17,3 +18,16 @@ Artisan::command('medallero {archivo : export .ianseo del torneo} {--json : sali
         : Reporte::texto($informe));
     return 0;
 })->purpose('Medallero y pases de categoría de un torneo exportado de IANSEO, según normas FATARCO');
+
+// La misma página que ve el navegador (misma vista Blade), en texto o HTML, para revisarla sin abrir la web.
+Artisan::command('medallero:pagina {archivo : export .ianseo del torneo} {--tandas : entrega en dos tandas} {--sin-jp-opcional : sin medallas a JP con menos de 3 sin eliminatoria} {--html : HTML tal cual lo sirve la web}', function (string $archivo) {
+    try {
+        $informe = Informe::generar($archivo, config('medallero.normas'));
+    } catch (ArchivoInvalido $e) {
+        $this->error($e->getMessage());
+        return 1;
+    }
+    $html = view('informe', ['inf' => $informe, 'archivo' => basename($archivo)])->render();
+    $this->output->write($this->option('html') ? $html : TextoDePagina::convertir($html, $this->option('tandas'), !$this->option('sin-jp-opcional')));
+    return 0;
+})->purpose('Guion de entrega tal como se ve en la página (texto, o HTML con --html)');
