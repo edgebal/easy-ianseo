@@ -7,7 +7,8 @@ namespace App\Medallero;
 
 final class Avisos
 {
-	public function __construct(private IanseoExport $t, private array $normas) {}
+	// $podios: los de Medallero, para saber de qué categoría es cada eliminatoria
+	public function __construct(private IanseoExport $t, private array $normas, private array $podios = []) {}
 
 	public function calcular(): array
 	{
@@ -105,7 +106,7 @@ final class Avisos
 			foreach ($porCat as $cat => $ids) {
 				[$div] = explode('/', $cat);
 				if (!isset($this->normas['alias_division'][$div])) continue;
-				if (array_filter($elimDe[$cat] ?? [], fn($cod) => str_replace('/', '', $cat) == $cod)) continue;
+				if (array_filter($this->podios, fn($p) => $p['eliminatorias'] && $p['propia'] == $cat)) continue;
 				$avisos[] = $this->t->nombreCategoria($cat) . ' (' . count($ids) . '): sin eliminatoria propia; en salón solo se premia a las categorías adaptadas que eliminan (art. 18.5.1). Decide el organizador.';
 			}
 		}
@@ -119,22 +120,27 @@ final class Avisos
 		$avisos = [];
 		$f = $this->t->finales[$codigo] ?? [];
 		$fase = 2 ** (int)ceil(log(max($fase, 1), 2)); // 24/48 de IANSEO: la llave de 32/64
-		$ocupados = 0;
-		for ($m = 2 * $fase; $m < 4 * $fase; $m++) if ((int)($f[$m]['FinAthlete'] ?? 0)) $ocupados++;
-		$byes = 2 * $fase - $ocupados;
-		if ($fase > 2 && $ocupados && $byes > 2) {
+		// bye: encuentro de la primera fase con un solo arquero (los vacíos de los dos lados no cuentan)
+		$byes = 0;
+		for ($m = 2 * $fase; $m < 4 * $fase; $m += 2) {
+			if (!(int)($f[$m]['FinAthlete'] ?? 0) != !(int)($f[$m + 1]['FinAthlete'] ?? 0)) $byes++;
+		}
+		if ($fase > 2 && $byes > 2) {
 			$avisos[] = "$codigo: la eliminatoria arranca en " . self::fase(2 * $fase) . " con $byes byes; en torneos regulares se puede empezar antes de semifinales con un máximo de 2 byes (art. $art.a).";
 		}
 
-		// rival presente pero el otro ganó por bye: no se presentó. Sin causa justificada es abandono,
-		// con puntaje 0 para cualquier ranking (art. 13.2.2.d / 15.3.2.d): sin medalla ni pase. Lo decide el jurado.
+		// rival presente pero el otro ganó por bye, sin IRM ni flechas cargadas: no se presentó. Sin causa justificada
+		// es abandono, con puntaje 0 para cualquier ranking (art. 13.2.2.d / 15.3.2.d): sin medalla ni pase. Lo decide el jurado.
+		// (IANSEO también da el bye cuando el rival tiene DNF/DSQ: eso ya lo marca el IRM, no se avisa acá.)
 		$ausente = [];
 		foreach ($f as $m => $a) {
 			if ($m % 2) continue;
 			$b = $f[$m + 1] ?? null;
 			if (!$b || !(int)$a['FinAthlete'] || !(int)$b['FinAthlete']) continue;
 			foreach ([[$a, $b], [$b, $a]] as [$gana, $pierde]) {
-				if ((int)$gana['FinTie'] == 2 && (int)$gana['FinWinLose'] == 1) $ausente[(int)$pierde['FinAthlete']][] = self::fase($m);
+				if ((int)$gana['FinTie'] != 2 || (int)$gana['FinWinLose'] != 1 || (int)$pierde['FinIrmType']) continue;
+				if ((int)$pierde['FinScore'] || (int)$pierde['FinSetScore'] || trim($pierde['FinArrowstring'] ?? '') !== '') continue;
+				$ausente[(int)$pierde['FinAthlete']][] = self::fase($m);
 			}
 		}
 		foreach ($ausente as $id => $fases) {

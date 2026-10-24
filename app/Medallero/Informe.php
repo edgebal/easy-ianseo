@@ -41,7 +41,7 @@ final class Informe
 			$normas['version'],
 			array_values(array_filter($podios, fn($p) => $p['estado'] == 'finalizado')),
 			array_values(array_filter($podios, fn($p) => $p['estado'] != 'finalizado')),
-			(new Avisos($t, $normas))->calcular(),
+			(new Avisos($t, $normas, $podios))->calcular(),
 			(new Pases($t, $normas))->calcular(),
 		);
 	}

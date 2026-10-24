@@ -76,12 +76,15 @@ body:has(#modo-dos:checked) .modo-dos { display: block; }
 .bloque .sin-medallas { display: none; }
 body:has(#jp-menos-de-3:not(:checked)) .bloque.opcional .medallas { display: none; }
 body:has(#jp-menos-de-3:not(:checked)) .bloque.opcional .sin-medallas { display: block; }
-body:has(#jp-menos-de-3:not(:checked)) .bloque.solo-medallas { display: none; }
+body:has(#jp-menos-de-3:not(:checked)) .bloque.solo-medallas,
+body:has(#jp-menos-de-3:not(:checked)) .grupo:not(:has(.bloque:not(.solo-medallas))),
+body:has(#jp-menos-de-3:not(:checked)) .tanda:not(:has(.bloque:not(.solo-medallas))) { display: none; }
 .titulo-tanda {
     font-size: 19px; margin: 26px 0 0; padding: 8px 12px;
     border: 2px solid var(--tinta); border-radius: 6px;
 }
-.tanda + .tanda { break-before: page; }
+/* salto después de cada tanda y no antes: si la primera queda vacía y oculta, no deja hoja en blanco */
+.tanda:not(:last-child) { break-after: page; }
 
 .anexo { break-before: page; }
 .anexo > h2 {

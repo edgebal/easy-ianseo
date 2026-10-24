@@ -7,11 +7,10 @@ namespace App\Medallero;
 //  - un podio extra por clasificación para las categorías acopladas que no tienen evento propio
 //    (art. 13.2.2.c / 15.3.2.c: "podrán obtener medallas en ambas categorías")
 //
-// Cada evento es el podio de una categoría, la que recibió a las demás:
-//  - si solo se le sumaron inclusiones reglamentarias (juveniles en Mayores, 13.2.2.c / 15.3.2.c; adaptados
-//    en la convencional, 18.5.1), la anfitriona (EvCode == División.Clase);
-//  - en un acople entre pares (p. ej. JP Sub-15 con JP Sub-18, art. 14.3), la que tiene 3 o más; si ninguna
-//    llega, la de más arqueros, y ante empate la anfitriona.
+// Cada evento es el podio de la categoría que recibió a las demás, que es la que se eligió al armar el
+// torneo en IANSEO: la anfitriona (EvCode == División.Clase). Solo si ninguna coincide con el código se
+// toma la de 3 o más (o la de más arqueros). Un acople entre pares es uno en el que alguna invitada no es una
+// inclusión reglamentaria (juveniles en Mayores, 13.2.2.c / 15.3.2.c; adaptados en la convencional, 18.5.1).
 // Las categorías acopladas llevan además su podio propio por clasificación. En JP con menos de 3 ese podio
 // queda marcado como opcional: el art. 14.4 solo premia a quienes eliminan, pero hay clubes que lo entregan.
 
@@ -31,7 +30,7 @@ final class Medallero
 			$categorias = array_keys($cuenta);
 			$anfitriona = null; // categoría cuyo código coincide con el del evento
 			foreach ($this->t->eventoClases[$codigo] ?? $categorias as $c) {
-				if (str_replace('/', '', $c) == $codigo && isset($cuenta[$c])) $anfitriona = $c;
+				if (str_replace('/', '', $c) == $codigo) $anfitriona = $c;
 			}
 			[$propia, $acople] = $this->receptora($cuenta, $anfitriona, $minimo);
 			$eliminatorias = (int)$ev['EvFinalFirstPhase'] > 0;
@@ -39,13 +38,6 @@ final class Medallero
 				? $this->porEliminatoria($codigo, $ids)
 				: $this->porClasificacion($ids, fn($id) => (int)$this->t->individuales[$codigo][$id]['IndRank']);
 			$nombre = trim($ev['EvEventName']);
-			if ($anfitriona && $propia != $anfitriona) {
-				// el evento lleva el nombre de una categoría pero la que recibió a las otras es otra
-				$codPropia = str_replace('/', '', $propia);
-				$podio['avisos'][] = "el evento se llama $nombre pero la categoría que recibió a las otras es " . $this->t->nombreCategoria($propia)
-					. ' (la de más arqueros): se premia como podio de esa categoría';
-				$nombre = isset($this->t->eventos[$codPropia]) ? trim($this->t->eventos[$codPropia]['EvEventName']) : $this->t->nombreCategoria($propia);
-			}
 			$podios[] = [
 				'tipo' => 'evento',
 				'codigo' => $codigo,
@@ -104,16 +96,14 @@ final class Medallero
 	// [categoría que recibió a las otras, si es un acople entre pares]
 	private function receptora(array $cuenta, ?string $anfitriona, int $minimo): array
 	{
-		if (count($cuenta) == 1) return [array_key_first($cuenta), false];
 		if ($anfitriona) {
 			$invitadas = array_diff(array_keys($cuenta), [$anfitriona]);
-			if (!array_filter($invitadas, fn($c) => !$this->esInclusion($c, $anfitriona))) return [$anfitriona, false];
+			return [$anfitriona, (bool)array_filter($invitadas, fn($c) => !$this->esInclusion($c, $anfitriona))];
 		}
+		if (count($cuenta) == 1) return [array_key_first($cuenta), false];
 		$grandes = array_keys(array_filter($cuenta, fn($n) => $n >= $minimo));
 		if (count($grandes) == 1) return [$grandes[0], true];
-		$max = max($cuenta);
-		$mayores = array_keys(array_filter($cuenta, fn($n) => $n == $max));
-		return [$anfitriona && in_array($anfitriona, $mayores, true) ? $anfitriona : $mayores[0], true];
+		return [array_search(max($cuenta), $cuenta), true];
 	}
 
 	// la categoría invitada entra al evento de la anfitriona por norma, no por falta de cupo

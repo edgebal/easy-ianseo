@@ -46,16 +46,18 @@ class MedalleroTest extends TestCase
             ->assertSeeInOrder(['Anexo', 'falta definir la final', 'eliminatoria con 2 participante(s)', 'No alcanzan el pase']);
     }
 
-    public function test_acople_entre_pares_se_premia_como_la_categoria_que_recibio(): void
+    public function test_acople_entre_pares_se_premia_como_la_categoria_del_evento(): void
     {
         $html = $this->subir($this->export('FSJ-1810-FINAL-ORO-PLATA-BRONCE.ianseo'))->assertOk()->getContent();
         $una = substr($html, strpos($html, 'class="modo-una"'), strpos($html, 'class="modo-dos"') - strpos($html, 'class="modo-una"'));
 
-        // BU18E20 tiene 4 Sub-15 y 1 Sub-18: la eliminatoria es el podio de Sub-15 (su evento sin eliminatoria no se entrega)
-        // y el Sub-18 acoplado tiene su podio propio opcional (art. 14.4)
-        $this->assertSame(1, substr_count($una, '<h3>JP Raso Sub-15 E20</h3>'));
-        $this->assertStringContainsString('eliminatoria acoplada con Raso JP-Jóvenes Promesas Sub-18 E20', $una);
-        $this->assertMatchesRegularExpression('/class="bloque opcional[^"]*">\s*<h3>Raso JP-Jóvenes Promesas Sub-18 E20<\/h3>\s*<div class="sub">categoría propia \(eliminó acoplada en JP Raso Sub-15 E20\)/', $una);
+        // BU18E20 se armó para Sub-18 (1 arquero) y recibió a 4 Sub-15: la eliminatoria es el podio de Sub-18,
+        // y Sub-15 lleva su podio propio por clasificación
+        $this->assertSame(1, substr_count($una, '<h3>JP Raso  Sub-18 E20</h3>'));
+        $this->assertStringContainsString('eliminatoria acoplada con Raso JP-Jóvenes Promesas Sub-15 E20', $una);
+        $this->assertStringContainsString('<h3>JP Raso Sub-15 E20</h3>', $una);
+        $this->assertStringContainsString('categoría propia (eliminó acoplada en JP Raso  Sub-18 E20)', $una);
+        $this->assertStringNotContainsString('Raso JP-Jóvenes Promesas Sub-18 E20</h3>', $una);
         $this->assertStringContainsString('id="jp-menos-de-3" checked', $html);
     }
 
@@ -64,8 +66,7 @@ class MedalleroTest extends TestCase
         $this->subir($this->export('FSJ-1810-FINAL-ORO-PLATA-BRONCE.ianseo'))
             ->assertOk()
             ->assertSee('BE30: la eliminatoria arranca en cuartos con 3 byes')
-            ->assertSee('BE20: Muller Marcos perdió sin tirar (semifinal, bronce)')
-            ->assertSee('el evento se llama JP Raso  Sub-18 E20 pero la categoría que recibió');
+            ->assertSee('BE20: Muller Marcos perdió sin tirar (semifinal, bronce)');
     }
 
     public function test_dos_tandas_por_categoria_con_las_acopladas_en_la_segunda(): void
