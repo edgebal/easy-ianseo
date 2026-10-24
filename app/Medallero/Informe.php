@@ -20,6 +20,8 @@ final class Informe
 		public readonly array $pendientes,
 		public readonly array $avisos,
 		public readonly array $pases,
+		public readonly bool $previo,  // torneo sin puntajes: solo sirve el control del armado
+		public readonly array $armado, // todos los podios (terminados o no), en el orden de los eventos
 	) {}
 
 	public static function generar(string $archivo, string $archivoNormas): self
@@ -36,13 +38,16 @@ final class Informe
 			'tipo' => $x['ToTypeName'], 'modalidad' => ['aire' => 'Aire Libre', 'sala' => 'Salón'][$t->modalidad] ?? null,
 			'modalidad_codigo' => $t->modalidad,
 		];
+		$pases = (new Pases($t, $normas))->calcular();
 		return new self(
 			$torneo,
 			$normas['version'],
 			array_values(array_filter($podios, fn($p) => $p['estado'] == 'finalizado')),
 			array_values(array_filter($podios, fn($p) => $p['estado'] != 'finalizado')),
-			(new Avisos($t, $normas, $podios))->calcular(),
-			(new Pases($t, $normas))->calcular(),
+			(new Avisos($t, $normas, $podios, $pases))->calcular(),
+			$pases,
+			$t->sinPuntajes(),
+			$podios,
 		);
 	}
 
@@ -66,7 +71,7 @@ final class Informe
 		return [
 			'torneo' => $this->torneo, 'normas' => $this->normas,
 			'medallero' => $this->medallero, 'pendientes' => $this->pendientes,
-			'avisos' => $this->avisos, 'pases' => $this->pases,
+			'avisos' => $this->avisos, 'pases' => $this->pases, 'previo' => $this->previo,
 		];
 	}
 
@@ -77,9 +82,35 @@ final class Informe
 		$extra[] = $p['eliminatorias'] ? 'por eliminatorias' : 'por clasificación';
 		if (count($p['categorias']) > 1) $extra[] = 'acopla ' . implode(' + ', $p['categorias']);
 		if ($p['acoplada_en']) $extra[] = 'categoría propia, eliminó acoplada en ' . implode(', ', $p['acoplada_en']);
-		if ($p['opcional'] == 'jp') $extra[] = 'solo con reglas antiguas de premiación JP (arts. 14.3 y 14.4)';
-		if ($p['opcional'] == 'escuela') $extra[] = 'Escuela con 2 o menos: podio no obligatorio (art. 11.2)';
+		if ($p['opcional']) $extra[] = self::OPCIONAL[$p['opcional']];
 		return implode(', ', $extra);
+	}
+
+	public const OPCIONAL = [
+		'jp' => 'solo con reglas antiguas de premiación JP (arts. 14.3 y 14.4)',
+		'escuela' => 'Escuela con 2 o menos: podio no obligatorio (art. 11.2)',
+		'adaptados' => 'adaptado de salón sin eliminatoria propia: solo con la opción de podio (art. 18.5.1)',
+	];
+
+	// fila de la tabla del armado: [evento, categorías, eliminatoria, premiación]
+	public static function filaArmado(array $p): array
+	{
+		$cod = fn($c) => str_replace('/', '', $c);
+		$cats = [$cod($p['propia']) . ' (' . ($p['cuenta'][$p['propia']] ?? 0) . ')'];
+		foreach ($p['cuenta'] as $c => $n) if ($c != $p['propia']) $cats[] = $cod($c) . " ($n)";
+		$elim = !$p['eliminatorias'] ? 'no' : 'desde ' . match (true) {
+			$p['fase'] <= 1 => 'la final', $p['fase'] == 2 => 'semifinales', $p['fase'] <= 4 => 'cuartos',
+			$p['fase'] <= 8 => 'octavos', default => '1/' . $p['fase'],
+		};
+		$premio = match (true) {
+			(bool)$p['acoplada_en'] => 'podio propio por clasificación (eliminó en ' . implode(', ', $p['acoplada_en']) . ')',
+			$p['tipo'] == 'categoria' => 'podio propio por clasificación',
+			default => 'podio de ' . $cod($p['propia']) . ($p['eliminatorias'] ? ' por eliminatoria' : ' por clasificación'),
+		};
+		if ($p['opcional']) $premio .= '; ' . self::OPCIONAL[$p['opcional']];
+		$recibe = array_shift($cats);
+		$nombre = $p['tipo'] == 'evento' ? "{$p['nombre']} ({$p['codigo']})" : $p['nombre'];
+		return [$nombre, $recibe . ($cats ? ' ← ' . implode(' + ', $cats) : ''), $elim, $premio];
 	}
 
 	public static function siguiente(array $pase): string

@@ -2,9 +2,10 @@
 
 Subís el export de un torneo de IANSEO (`.ianseo`) y te arma una página lista para imprimir (Ctrl+P) con:
 
-- **Medallero** de los eventos finalizados: por eliminatorias o por clasificación, según cómo se armó el torneo en IANSEO, incluyendo los acoplamientos: la eliminatoria es el podio de la categoría que recibió a las otras (la de 3 o más) y cada acoplado tiene también podio en su categoría propia. En JP se premia solo la eliminatoria (arts. 12.4, 14.3 y 14.4): las categorías sin eliminatoria (acopladas, con menos de 3 o porque no se eliminó) no llevan podio, salvo que en el guion se elijan las *reglas antiguas de premiación JP*. En Escuela (también la adaptada) con 2 o menos sin eliminatoria el podio no es obligatorio (art. 11.2): se entrega por defecto y se puede sacar desde el guion.
+- **Medallero** de los eventos finalizados: por eliminatorias o por clasificación, según cómo se armó el torneo en IANSEO, incluyendo los acoplamientos: la eliminatoria es el podio de la categoría que recibió a las otras (la de 3 o más) y cada acoplado tiene también podio en su categoría propia. En JP se premia solo la eliminatoria (arts. 12.4, 14.3 y 14.4): las categorías sin eliminatoria (acopladas, con menos de 3 o porque no se eliminó) no llevan podio, salvo que en el guion se elijan las *reglas antiguas de premiación JP*. En salón, P.I.2 y AA2 sin eliminatoria propia tampoco (art. 18.5.1), salvo con la opción de podio para ellos. En Escuela (también la adaptada) con 2 o menos sin eliminatoria el podio no es obligatorio (art. 11.2): se entrega por defecto y se puede sacar desde el guion.
 - **Pendientes**: eventos que todavía no terminaron (no entran al medallero).
-- **Avisos de normas** (en el anexo; las decisiones son del jurado u organizador): eliminatorias con menos de 3, más de 2 byes (asumiendo torneo regular), encuentros perdidos sin tirar (posible abandono), juveniles no incluidos en Mayores, JP sin eliminatoria o sin acoplar, adaptados de salón sin eliminatoria, etc.
+- **Avisos de normas** (en el anexo, agrupados por tema; las decisiones son del jurado u organizador): eliminatorias con menos de 3, más de 2 byes (asumiendo torneo regular), encuentros perdidos sin tirar (posible abandono), juveniles no incluidos en Mayores, JP sin eliminatoria o sin acoplar, acoples de otra distancia o división, categorías sin evento, P.I.2/AA2 fuera de la convencional, adaptados de salón sin eliminatoria, categorías sin puntaje de pase, etc. Además, una tabla con el armado de cada evento (quién recibe, acopladas, eliminatoria y cómo se premia).
+- **Control previo**: si el export todavía no tiene puntajes (antes de arrancar el torneo), la página muestra solo los avisos y el armado, con los byes y cortes calculados con los inscriptos.
 - **Pases de categoría** de Escuela y Jóvenes Promesas (aire libre y salón), con Maestro/Excelencia en JP.
 
 Los puntajes y reglas están en `resources/normas/fatarco-2026.php` (Normas FATARCO 2026). Para otra temporada se agrega otro archivo y se cambia `config/medallero.php` o `MEDALLERO_NORMAS` en el `.env`.
@@ -35,7 +36,7 @@ composer install --no-dev --optimize-autoloader
 ```sh
 php artisan medallero torneo.ianseo          # reporte en texto
 php artisan medallero torneo.ianseo --json   # todo en JSON
-php artisan medallero:pagina torneo.ianseo  # el guion tal como lo muestra la página (--tandas, --solo-tanda=1|2, --sin-anexo, --jp-reglas-antiguas, --sin-escuela-hasta-2, --html)
+php artisan medallero:pagina torneo.ianseo  # el guion tal como lo muestra la página (--tandas, --solo-tanda=1|2, --sin-anexo, --jp-reglas-antiguas, --sin-escuela-hasta-2, --adaptados-sala, --html)
 ```
 
 ## Empaquetar

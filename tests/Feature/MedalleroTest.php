@@ -60,6 +60,7 @@ class MedalleroTest extends TestCase
         $this->assertStringContainsString('categoría propia (eliminó acoplada en JP Raso  Sub-18 E20)', $una);
         $this->assertStringNotContainsString('Raso JP-Jóvenes Promesas Sub-18 E20</h3>', $una);
         $this->assertStringContainsString('<input type="checkbox" id="jp-reglas-antiguas">', $html); // por defecto, las normas
+        $this->assertStringContainsString('<input type="checkbox" id="escuela-hasta-2" checked>', $html);
     }
 
     public function test_avisos_de_cuadro_y_walkover(): void
@@ -187,6 +188,44 @@ class MedalleroTest extends TestCase
         $dos = Artisan::output();
         $this->assertStringNotContainsString('1ª tanda', $dos);
         $this->assertStringNotContainsString('## Anexo', $dos);
+    }
+
+    public function test_adaptados_de_salon_sin_eliminatoria_sin_medallas_salvo_con_la_opcion(): void
+    {
+        $ruta = $this->export('Indoor.ianseo');
+        Artisan::call('medallero:pagina', ['archivo' => $ruta]);
+        $normas = explode('## Anexo', Artisan::output())[0];
+        $this->assertStringNotContainsString('TORALES FOCHESATTO Sofia', $normas);
+        Artisan::call('medallero:pagina', ['archivo' => $ruta, '--adaptados-sala' => true]);
+        $this->assertStringContainsString("### Compuesto AA2 Femenino\n\n  - [ORO] TORALES FOCHESATTO Sofia", Artisan::output());
+    }
+
+    public function test_antes_de_empezar_muestra_el_control_del_armado(): void
+    {
+        // el export con los puntajes y el cuadro vacíos, como antes de arrancar el torneo
+        $g = unserialize(gzuncompress(file_get_contents($this->export('FSJ-1810-FINAL-ORO-PLATA-BRONCE.ianseo'))), ['allowed_classes' => false]);
+        foreach ($g['Qualifications'] as &$q) {
+            foreach ($q as $k => &$v) if (preg_match('/^Qu(Score|Gold|Xnine|Hits|D\dScore|D\dHits|D\dArrowstring|Rank|ClRank)$/', $k)) $v = is_numeric($v) ? 0 : '';
+        }
+        unset($q, $v);
+        foreach ($g['Finals'] as &$f) $f = ['FinAthlete' => 0, 'FinScore' => 0, 'FinSetScore' => 0, 'FinWinLose' => 0, 'FinTie' => 0, 'FinArrowstring' => ''] + $f;
+        unset($f);
+        $ruta = tempnam(sys_get_temp_dir(), 'previo');
+        file_put_contents($ruta, gzcompress(serialize($g)));
+
+        Artisan::call('medallero:pagina', ['archivo' => $ruta]);
+        $texto = Artisan::output();
+        unlink($ruta);
+        $this->assertStringContainsString('Control previo al torneo', $texto);
+        $this->assertStringContainsString('## Control del armado', $texto);
+        $this->assertStringNotContainsString("\n## Jóvenes Promesas", $texto); // sin guion
+        $this->assertStringNotContainsString('clasificación incompleta', $texto);
+        $this->assertStringNotContainsString('No alcanzan el pase', $texto);
+        // byes y cortes calculados con los inscriptos, y el armado de cada evento
+        $this->assertStringContainsString('BE30: la eliminatoria arranca en cuartos con 5 inscriptos (3 byes)', $texto);
+        $this->assertStringContainsString('BM: 5 inscriptos para una eliminatoria desde semifinal: entran los 4 primeros', $texto);
+        $this->assertStringContainsString('JP Raso Sub-18 E20 (BU18E20) | BU18E20 (1) ← BU15E20 (4) | desde semifinales | podio de BU18E20 por eliminatoria', $texto);
+        $this->assertStringContainsString("#### Eliminatorias", $texto); // avisos agrupados por tema
     }
 
     public function test_comando_de_consola(): void

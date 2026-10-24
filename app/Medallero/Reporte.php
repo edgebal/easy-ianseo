@@ -11,6 +11,13 @@ final class Reporte
 		$tor = $inf->torneo;
 		$o = "{$tor['nombre']}\n{$tor['lugar']} · {$inf->fechas()} · {$tor['codigo']} · " . ($tor['modalidad'] ?? $tor['tipo']) . " · {$inf->normas}\n";
 
+		if ($inf->previo) {
+			// antes de empezar: cómo quedó armado cada evento y los avisos
+			$o .= self::titulo('CONTROL PREVIO (el torneo todavía no tiene puntajes)');
+			foreach ($inf->armado as $p) $o .= '  ' . implode(' | ', Informe::filaArmado($p)) . "\n";
+			return $o . self::avisos($inf);
+		}
+
 		$o .= self::titulo('MEDALLERO');
 		foreach ($inf->medallero as $p) {
 			$o .= "\n{$p['nombre']} ({$p['codigo']}) — " . Informe::detallePodio($p) . "\n";
@@ -26,10 +33,7 @@ final class Reporte
 			foreach ($inf->pendientes as $p) $o .= "  {$p['nombre']} ({$p['codigo']}) — " . Informe::detallePodio($p) . ": {$p['motivo']}\n";
 		}
 
-		if ($inf->avisos) {
-			$o .= self::titulo('AVISOS DE NORMAS');
-			foreach ($inf->avisos as $a) $o .= "  - $a\n";
-		}
+		$o .= self::avisos($inf);
 
 		$o .= self::titulo('PASES DE CATEGORÍA (Escuela y Jóvenes Promesas)');
 		if (!$inf->pases) return $o . "  No hay arqueros de Escuela ni Jóvenes Promesas.\n";
@@ -46,6 +50,17 @@ final class Reporte
 			}
 		}
 		return $o . "\n  Notas: " . wordwrap(Informe::NOTA_PASES, 100, "\n  ") . "\n";
+	}
+
+	private static function avisos(Informe $inf): string
+	{
+		if (!$inf->avisos) return '';
+		$o = self::titulo('AVISOS DE NORMAS');
+		foreach ($inf->avisos as $tema => $avisos) {
+			$o .= "\n  $tema\n";
+			foreach ($avisos as $a) $o .= "  - $a\n";
+		}
+		return $o;
 	}
 
 	// str_pad que cuenta caracteres y no bytes (nombres con tildes)

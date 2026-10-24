@@ -8,23 +8,25 @@ use DOMNode;
 use DOMXPath;
 
 // La página del guion (la misma vista que se imprime) pasada a texto, para revisarla desde la consola.
-// Aplica a mano lo que en el navegador deciden los selectores: una o dos tandas y si se muestran
-// los podios opcionales de JP (reglas antiguas de premiación) y de Escuela con 2 o menos.
+// Aplica a mano lo que en el navegador deciden los selectores: una o dos tandas, qué tanda se imprime,
+// el anexo y qué podios opcionales se entregan (Guion::OPCIONALES).
 
 final class TextoDePagina
 {
-	private const BLOQUES = ['h1', 'h2', 'h3', 'p', 'div', 'li', 'tr', 'section', 'header', 'fieldset', 'ul', 'table'];
+	private const BLOQUES = ['h1', 'h2', 'h3', 'h4', 'p', 'div', 'li', 'tr', 'section', 'header', 'fieldset', 'ul', 'table'];
 
 	// $tanda: en dos tandas, imprimir solo la 1 o la 2 (null = todo). La 1ª tanda nunca lleva anexo.
-	public static function convertir(string $html, bool $dosTandas = false, bool $jpReglasAntiguas = false, ?int $tanda = null, bool $anexo = true, bool $escuelaHasta2 = true): string
+	// $entregar: tipo de opcional => si se entrega (lo que falte, como viene por defecto el checkbox).
+	public static function convertir(string $html, bool $dosTandas = false, ?int $tanda = null, bool $anexo = true, array $entregar = []): string
 	{
 		$doc = new DOMDocument();
 		@$doc->loadHTML('<?xml encoding="utf-8"?>' . $html, LIBXML_NOERROR);
 		$x = new DOMXPath($doc);
 		$clase = fn(string $c) => "contains(concat(' ', normalize-space(@class), ' '), ' $c ')";
 
-		$ocultar = ['//*[' . $clase($dosTandas ? 'modo-una' : 'modo-dos') . ']', '//*[' . $clase('barra') . ']', '//*[' . $clase('selector') . ']'];
-		foreach (['jp' => $jpReglasAntiguas, 'escuela' => $escuelaHasta2] as $tipo => $seEntrega) {
+		$ocultar = ['//style', '//*[' . $clase($dosTandas ? 'modo-una' : 'modo-dos') . ']', '//*[' . $clase('barra') . ']', '//*[' . $clase('selector') . ']'];
+		$entregar += array_map(fn($o) => $o['defecto'], Guion::OPCIONALES);
+		foreach ($entregar as $tipo => $seEntrega) {
 			$bloque = '//*[' . $clase('opcional-' . $tipo) . ']';
 			if ($seEntrega) {
 				$ocultar[] = "$bloque//*[" . $clase('sin-medallas') . ']';
@@ -82,6 +84,7 @@ final class TextoDePagina
 			'h1' => "\n" . mb_strtoupper($linea) . "\n" . str_repeat('=', mb_strlen($linea)) . "\n",
 			'h2' => "\n\n## $linea\n",
 			'h3' => "\n### $linea\n",
+			'h4' => "\n#### $linea\n",
 			'li' => "  - $linea\n",
 			'tr' => "  $linea\n",
 			default => "\n$linea\n",

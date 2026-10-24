@@ -18,6 +18,26 @@ final class Guion
 {
 	public const GRUPOS = [1 => 'Jóvenes Promesas', 2 => 'Escuela', 3 => 'Sub, 50+ y Mayores'];
 
+	// podios opcionales (ver Medallero): checkbox del selector, si se entregan por defecto, texto del
+	// selector y nota del bloque cuando no se entregan
+	public const OPCIONALES = [
+		'jp' => [
+			'id' => 'jp-reglas-antiguas', 'defecto' => false,
+			'texto' => 'Reglas antiguas de premiación JP: podio por clasificación a las categorías sin eliminatoria, como en Mayores (las normas premian solo las eliminatorias, arts. 12.4, 14.3 y 14.4)',
+			'nota' => 'sin medallas: en JP se premia solo la eliminatoria (art. 14.4)',
+		],
+		'escuela' => [
+			'id' => 'escuela-hasta-2', 'defecto' => true,
+			'texto' => 'Podio a Escuela con 2 o menos arqueros sin eliminatoria (no obligatorio, art. 11.2)',
+			'nota' => 'sin podio: 2 o menos arqueros (art. 11.2)',
+		],
+		'adaptados' => [
+			'id' => 'adaptados-sala', 'defecto' => false,
+			'texto' => 'Podio por clasificación a P.I.2 y AA2 de salón sin eliminatoria propia (las normas premian solo a las que eliminan, art. 18.5.1)',
+			'nota' => 'sin medallas: en salón solo se premia a las categorías adaptadas que eliminan (art. 18.5.1)',
+		],
+	];
+
 	private const ARCOS = ['L' => 1, 'T' => 2, 'B' => 3, 'C' => 4, 'R' => 5, 'Z' => 6, 'PI1' => 7, 'VI' => 8, 'AA1' => 9];
 
 	// divisiones adaptadas que van junto a su arco convencional
@@ -68,6 +88,14 @@ final class Guion
 		$grupos = [];
 		foreach ($bloques as $b) $grupos[$b['grupo']][] = $b;
 		return $grupos;
+	}
+
+	// Tipos de opcional de los que depende que se vea un conjunto de bloques: si todos son opcionales sin
+	// pases (solo medallas), el conjunto desaparece cuando ninguno de esos tipos se entrega.
+	public static function soloOpcionales(array $bloques): array
+	{
+		foreach ($bloques as $b) if (!$b['opcional'] || $b['pases']) return [];
+		return array_values(array_unique(array_column($bloques, 'opcional')));
 	}
 
 	// Entrega en dos tandas: [1 => grupos sin eliminatorias, 2 => grupos con eliminatorias].

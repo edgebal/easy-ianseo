@@ -16,6 +16,8 @@ namespace App\Medallero;
 //   14.3 y 14.4 solo premian las eliminatorias; se entrega únicamente con las reglas antiguas de premiación JP.
 // - 'escuela': Escuela (también adaptada, 18.6) con 2 o menos sin eliminatoria: el art. 11.2 no lo hace
 //   obligatorio; por defecto se entrega.
+// - 'adaptados': en salón, P.I.2 y AA2 (que tiran en la convencional) sin eliminatoria propia: "sólo se premiará
+//   a las categorías que eliminen" (18.5.1). Los adaptados JP o Escuela siguen las reglas de su programa.
 
 final class Medallero
 {
@@ -50,7 +52,9 @@ final class Medallero
 				'propia' => $propia,
 				'acople' => $acople,
 				'participantes' => count($ids),
+				'cuenta' => $cuenta,
 				'eliminatorias' => $eliminatorias,
+				'fase' => (int)$ev['EvFinalFirstPhase'],
 			] + $podio;
 		}
 
@@ -78,7 +82,9 @@ final class Medallero
 				'propia' => $cat,
 				'acople' => false,
 				'participantes' => count($ids),
+				'cuenta' => [$cat => count($ids)],
 				'eliminatorias' => false,
+				'fase' => 0,
 			] + $this->porClasificacion($ids, fn($id) => (int)$this->t->quali[$id]['QuClRank']);
 		}
 
@@ -87,7 +93,8 @@ final class Medallero
 			$p['opcional'] = match (true) {
 				$p['eliminatorias'] => null,
 				self::esJP($p['propia']) => 'jp',
-				self::esEscuela($p['propia']) && count($porCategoria[$p['propia']] ?? []) < $minimo => 'escuela',
+				self::esEscuela($p['propia']) => count($porCategoria[$p['propia']] ?? []) < $minimo ? 'escuela' : null,
+				$this->t->modalidad == 'sala' && isset($this->normas['alias_division'][explode('/', $p['propia'])[0]]) => 'adaptados',
 				default => null,
 			};
 		}

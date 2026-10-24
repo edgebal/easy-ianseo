@@ -93,6 +93,18 @@ final class IanseoExport
 		return true;
 	}
 
+	// torneo sin empezar: nadie tiene puntaje ni flechas cargadas (sirve para controlar el armado antes)
+	public function sinPuntajes(): bool
+	{
+		foreach ($this->entries as $id => $e) {
+			if (!$this->compite($id)) continue;
+			$q = $this->quali[$id];
+			if ((int)$q['QuScore'] > 0) return false;
+			for ($d = 1; $d <= (int)$this->torneo['ToNumDist']; $d++) if ((int)$q["QuD{$d}Hits"] > 0 || (int)$q["QuD{$d}Score"] > 0) return false;
+		}
+		return true;
+	}
+
 	public static function fueraDeRanking(int|string $irm): bool
 	{
 		return in_array((int)$irm, self::IRM_FUERA, true);

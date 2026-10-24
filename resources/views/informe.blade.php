@@ -8,13 +8,20 @@
     $fechas = $fecha($t['desde']) . ($t['hasta'] != $t['desde'] ? ' al ' . $fecha($t['hasta']) : '');
     $grupos = Guion::armar($inf);
     $tandas = Guion::tandas($inf);
-    // podios opcionales => checkbox que los entrega (sin marcar: no se entregan)
-    $opcionales = array_intersect_key(['jp' => 'jp-reglas-antiguas', 'escuela' => 'escuela-hasta-2'],
-        array_flip(array_filter(array_column($inf->medallero, 'opcional'))));
+    // tipos de podio opcional que hay en el torneo: cada uno tiene su checkbox (sin marcar: no se entregan)
+    $opcionales = array_intersect_key(Guion::OPCIONALES, array_flip(array_filter(array_column($inf->medallero, 'opcional'))));
+    // grupos y tandas que quedan vacíos si no se entregan sus opcionales: id del elemento => tipos
+    $vacios = [];
+    foreach ($grupos as $g => $bloques) $vacios["una-g$g"] = Guion::soloOpcionales($bloques);
+    foreach ($tandas as $n => $gruposTanda) {
+        $vacios["t$n"] = Guion::soloOpcionales(array_merge(...array_values($gruposTanda)));
+        foreach ($gruposTanda as $g => $bloques) $vacios["t$n-g$g"] = Guion::soloOpcionales($bloques);
+    }
+    $vacios = array_filter($vacios);
     $tituloTanda = [1 => '1ª tanda — categorías sin eliminatorias', 2 => '2ª tanda — categorías con eliminatorias (propias o acopladas)'];
 @endphp
 
-@section('titulo', 'Entrega de premios — ' . $t['nombre'])
+@section('titulo', ($inf->previo ? 'Control previo — ' : 'Entrega de premios — ') . $t['nombre'])
 
 @section('estilos')
 .barra {
@@ -91,21 +98,19 @@ body:has(#modo-dos:checked):has(#imp-2:checked) .tanda-1,
 body:has(#con-anexo:not(:checked)) .anexo,
 body:has(#modo-dos:checked):has(#imp-1:checked) .anexo,
 body:has(#modo-dos:checked):has(#imp-1:checked) .op-anexo { display: none; }
-/* podios opcionales (JP sin eliminatoria, Escuela con 2 o menos): con su checkbox sin marcar no se entregan */
-.bloque .sin-medallas, .pases.todos-con-medalla, .pases li.con-medalla, .pase.solo-sin-jp, .pase.solo-sin-escuela { display: none; }
-@foreach (['jp' => 'jp-reglas-antiguas', 'escuela' => 'escuela-hasta-2'] as $tipo => $id)
-body:has(#{{ $id }}:not(:checked)) .pase.solo-sin-{{ $tipo }} { display: inline-block; }
-body:has(#{{ $id }}:not(:checked)) .opcional-{{ $tipo }} .pases.todos-con-medalla { display: block; }
-body:has(#{{ $id }}:not(:checked)) .opcional-{{ $tipo }} .pases li.con-medalla { display: block; }
-body:has(#{{ $id }}:not(:checked)) .opcional-{{ $tipo }} .medallas { display: none; }
-body:has(#{{ $id }}:not(:checked)) .opcional-{{ $tipo }} .sin-medallas { display: block; }
-body:has(#{{ $id }}:not(:checked)) .bloque.solo-medallas.opcional-{{ $tipo }},
-body:has(#{{ $id }}:not(:checked)) .grupo:not(:has(.bloque:not(.solo-medallas.opcional-{{ $tipo }}))),
-body:has(#{{ $id }}:not(:checked)) .tanda:not(:has(.bloque:not(.solo-medallas.opcional-{{ $tipo }}))) { display: none; }
+/* podios opcionales (ver Guion::OPCIONALES): con su checkbox sin marcar no se entregan */
+.bloque .sin-medallas, .pases.todos-con-medalla, .pases li.con-medalla, .pase.solo-sin { display: none; }
+@foreach ($opcionales as $tipo => $o)
+body:has(#{{ $o['id'] }}:not(:checked)) .pase.solo-sin-{{ $tipo }} { display: inline-block; }
+body:has(#{{ $o['id'] }}:not(:checked)) .opcional-{{ $tipo }} .pases.todos-con-medalla { display: block; }
+body:has(#{{ $o['id'] }}:not(:checked)) .opcional-{{ $tipo }} .pases li.con-medalla { display: block; }
+body:has(#{{ $o['id'] }}:not(:checked)) .opcional-{{ $tipo }} .medallas { display: none; }
+body:has(#{{ $o['id'] }}:not(:checked)) .opcional-{{ $tipo }} .sin-medallas { display: block; }
+body:has(#{{ $o['id'] }}:not(:checked)) .bloque.solo-medallas.opcional-{{ $tipo }} { display: none; }
 @endforeach
-/* con los dos sin marcar, grupos y tandas que solo tienen opcionales de uno y otro tipo */
-body:has(#jp-reglas-antiguas:not(:checked)):has(#escuela-hasta-2:not(:checked)) .grupo:not(:has(.bloque:not(.solo-medallas))),
-body:has(#jp-reglas-antiguas:not(:checked)):has(#escuela-hasta-2:not(:checked)) .tanda:not(:has(.bloque:not(.solo-medallas))) { display: none; }
+@foreach ($vacios as $id => $tipos)
+body{{ implode('', array_map(fn ($tipo) => ':has(#' . Guion::OPCIONALES[$tipo]['id'] . ':not(:checked))', $tipos)) }} #{{ $id }} { display: none; }
+@endforeach
 .titulo-tanda {
     font-size: 19px; margin: 26px 0 0; padding: 8px 12px;
     border: 2px solid var(--tinta); border-radius: 6px;
@@ -120,6 +125,8 @@ body:has(#imp-1:checked) .tanda-1 { break-after: auto; }
     border-bottom: 2px solid var(--tinta); padding: 22px 0 6px; margin-bottom: 10px;
 }
 .anexo h3 { font-size: 14px; margin: 16px 0 6px; }
+.anexo h4 { font-size: 13px; margin: 10px 0 4px; }
+.previo .anexo { break-before: auto; }
 ul.lista { margin: 0; padding-left: 18px; }
 ul.lista li { margin: 3px 0; }
 table.pases { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -159,6 +166,7 @@ table.pases tr { break-inside: avoid; }
         <button class="boton" type="button" onclick="window.print()">Imprimir</button>
     </div>
     {{-- opciones de la entrega: deciden qué se ve y, por lo tanto, qué se imprime --}}
+    @if (!$inf->previo)
     <fieldset class="selector">
         <legend class="oculto">Opciones de la entrega</legend>
         <div class="opcion">
@@ -176,72 +184,102 @@ table.pases tr { break-inside: avoid; }
         <div class="opcion op-anexo">
             <label><input type="checkbox" id="con-anexo" checked> Incluir el anexo (pendientes, avisos y quienes no pasan)</label>
         </div>
-        @isset($opcionales['jp'])
+        @foreach ($opcionales as $o)
             <div class="opcion">
-                <label><input type="checkbox" id="jp-reglas-antiguas"> Reglas antiguas de premiación JP: podio por clasificación a las categorías sin eliminatoria, como en Mayores (las normas premian solo las eliminatorias, arts. 12.4, 14.3 y 14.4)</label>
+                <label><input type="checkbox" id="{{ $o['id'] }}"{{ $o['defecto'] ? ' checked' : '' }}> {{ $o['texto'] }}</label>
             </div>
-        @endisset
-        @isset($opcionales['escuela'])
-            <div class="opcion">
-                <label><input type="checkbox" id="escuela-hasta-2" checked> Podio a Escuela con 2 o menos arqueros sin eliminatoria (no obligatorio, art. 11.2)</label>
-            </div>
-        @endisset
+        @endforeach
     </fieldset>
+    @endif
 
-    <article class="hoja">
+    {{-- antes de empezar (sin puntajes) la página es solo el control del armado del torneo --}}
+    <article @class(['hoja', 'previo' => $inf->previo])>
         <header class="encabezado">
             <h1>{{ $t['nombre'] }}</h1>
             <div class="datos">
-                <span>Entrega de premios</span>
+                <span>{{ $inf->previo ? 'Control previo al torneo (todavía sin puntajes)' : 'Entrega de premios' }}</span>
                 <span>{{ $t['lugar'] }}</span>
                 <span>{{ $fechas }}</span>
                 <span>{{ $t['modalidad'] ?? $t['tipo'] }}</span>
             </div>
         </header>
 
+        @unless ($inf->previo)
         @if (!$grupos)
             <p>No hay podios finalizados ni pases de categoría.</p>
         @endif
 
         <div class="modo-una">
-            @include('partials.grupos', ['grupos' => $grupos])
+            @include('partials.grupos', ['grupos' => $grupos, 'prefijo' => 'una'])
         </div>
 
         <div class="modo-dos">
             @foreach ($tandas as $n => $gruposTanda)
-                <section class="tanda tanda-{{ $n }}">
+                <section class="tanda tanda-{{ $n }}" id="t{{ $n }}">
                     <h2 class="titulo-tanda">{{ $tituloTanda[$n] }}</h2>
-                    @include('partials.grupos', ['grupos' => $gruposTanda])
+                    @include('partials.grupos', ['grupos' => $gruposTanda, 'prefijo' => "t$n"])
                 </section>
             @endforeach
         </div>
+        @endunless
 
         <section class="anexo">
-            <h2>Anexo</h2>
+            <h2>{{ $inf->previo ? 'Control del armado' : 'Anexo' }}</h2>
 
-            <h3>Pendientes (no entran en la entrega)</h3>
-            @if ($inf->pendientes)
-                <ul class="lista">
-                    @foreach ($inf->pendientes as $p)
-                        <li><b>{{ $p['nombre'] }}</b> — {{ $p['motivo'] }}</li>
-                    @endforeach
-                </ul>
-            @else
-                <p>No hay eventos pendientes.</p>
-            @endif
+            @unless ($inf->previo)
+                <h3>Pendientes (no entran en la entrega)</h3>
+                @if ($inf->pendientes)
+                    <ul class="lista">
+                        @foreach ($inf->pendientes as $p)
+                            <li><b>{{ $p['nombre'] }}</b> — {{ $p['motivo'] }}</li>
+                        @endforeach
+                    </ul>
+                @else
+                    <p>No hay eventos pendientes.</p>
+                @endif
+            @endunless
 
             @php $avisosPodio = collect($inf->medallero)->flatMap(fn ($p) => array_map(fn ($a) => $p['nombre'] . ': ' . $a, $p['avisos'])); @endphp
             <h3>Avisos de normas y de datos</h3>
             @if ($inf->avisos || $avisosPodio->isNotEmpty())
-                <ul class="lista">
-                    @foreach ($inf->avisos as $av)<li>{{ $av }}</li>@endforeach
-                    @foreach ($avisosPodio as $av)<li>{{ $av }}</li>@endforeach
-                </ul>
+                @foreach ($inf->avisos as $tema => $avisos)
+                    <h4>{{ $tema }}</h4>
+                    <ul class="lista">
+                        @foreach ($avisos as $av)<li>{{ $av }}</li>@endforeach
+                    </ul>
+                @endforeach
+                @if ($avisosPodio->isNotEmpty())
+                    <h4>Podios</h4>
+                    <ul class="lista">
+                        @foreach ($avisosPodio as $av)<li>{{ $av }}</li>@endforeach
+                    </ul>
+                @endif
             @else
                 <p>Sin avisos.</p>
             @endif
 
-            @if ($inf->noPasan())
+            {{-- cómo quedó armado cada evento en IANSEO y cómo se premia --}}
+            <h3>Armado de eventos y premiación</h3>
+            <div class="tabla-scroll">
+                <table class="pases">
+                    <thead>
+                        <tr><th>Evento</th><th>Recibe ← acopladas (arqueros)</th><th>Eliminatoria</th><th>Premiación</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($inf->armado as $p)
+                            @php [$evento, $cats, $elim, $premio] = Informe::filaArmado($p); @endphp
+                            <tr>
+                                <td>{{ $evento }}</td>
+                                <td>{{ $cats }}</td>
+                                <td>{{ $elim }}</td>
+                                <td>{{ $premio }}{{ !$inf->previo && $p['estado'] != 'finalizado' ? ' (pendiente)' : '' }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            @if (!$inf->previo && $inf->noPasan())
                 <h3>No alcanzan el pase de categoría</h3>
                 <div class="tabla-scroll">
                     <table class="pases">
@@ -262,7 +300,7 @@ table.pases tr { break-inside: avoid; }
                 </div>
             @endif
 
-            @if ($inf->pases)
+            @if ($inf->pases && !$inf->previo)
                 <p class="notas">{{ Informe::NOTA_PASES }}</p>
             @endif
             <p class="notas">{{ $t['codigo'] }} · {{ $inf->normas }}</p>
