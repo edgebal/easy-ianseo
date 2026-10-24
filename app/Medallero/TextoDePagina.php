@@ -62,6 +62,7 @@ final class TextoDePagina
 		// lo que en la página resuelve el CSS: el guion antes del club y los badges de medalla y pase
 		$clases = ' ' . $n->getAttribute('class') . ' ';
 		if (str_contains($clases, ' club ')) return ' — ' . trim($dentro);
+		if (str_contains($clases, ' apellido ')) return mb_strtoupper(trim($dentro));
 		if (str_contains($clases, ' datos ')) {
 			$partes = [];
 			foreach ($n->childNodes as $c) if (trim($c->textContent) !== '') $partes[] = trim($c->textContent);

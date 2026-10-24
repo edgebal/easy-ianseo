@@ -43,8 +43,8 @@ final class Guion
 			$medallas = [];
 			foreach (array_reverse($p['podio']) as $a) { // Bronce → Plata → Oro
 				$pase = in_array($a['id'], $idsPase, true) ? $pases[array_search($a['id'], $idsPase)] : null;
-				// en eventos acoplados se aclara la categoría de quien no es de la que recibió
-				$otraCat = $a['categoria'] != $cat ? $p['nombres_categorias'][$a['categoria']] : null;
+				// en eventos acoplados se aclara (con el código) la categoría de quien no es de la que recibió
+				$otraCat = $a['categoria'] != $cat ? str_replace('/', '', $a['categoria']) : null;
 				$medallas[] = $a + ['pase' => $pase, 'otra_categoria' => $otraCat];
 			}
 			$conMedalla = fn($x) => in_array($x['id'], $enPodio, true);

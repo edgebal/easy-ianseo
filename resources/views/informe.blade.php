@@ -41,30 +41,32 @@
 .bloque { break-inside: avoid; padding: 14px 0 12px; border-bottom: 1px solid var(--linea); }
 .bloque h3 { font-size: 18px; }
 .bloque .sub { color: var(--suave); font-size: 13px; margin-top: 1px; }
-.bloque .titulo-pases { font-weight: 700; margin-top: 10px; }
-.bloque ul { list-style: none; margin: 2px 0 0; padding: 0; }
-.bloque li { margin: 3px 0; }
-.club { color: var(--suave); }
-.club::before { content: "— "; }
+.bloque .destino { color: var(--suave); font-size: 13px; margin-top: 10px; }
+.bloque ul { list-style: none; margin: 0; padding: 0; }
 .anota { font-style: italic; }
 
+/* una persona por cuadrito: badges, APELLIDO Nombre y club, con aire para leer de corrido */
+.filas { margin-top: 8px; }
 .medallas { margin-top: 10px; }
-.medallas li { display: grid; grid-template-columns: 76px 1fr; gap: 10px; align-items: baseline; margin: 5px 0; }
-.medallas .nombre { font-size: 16.5px; font-weight: 600; }
-.medalla {
-    display: inline-block; padding: 1px 0; border-radius: 4px; border: 1.5px solid transparent;
-    color: #fff; font-weight: 700; font-size: 12px; line-height: 19px; text-align: center;
-    text-transform: uppercase; letter-spacing: .05em;
+.fila {
+    display: block; margin: 6px 0; padding: 8px 12px;
+    border: 1px solid var(--linea); border-radius: 6px; break-inside: avoid;
+}
+.fila .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
+.fila .nombre { display: block; font-size: 17px; font-weight: 600; }
+.fila .apellido { letter-spacing: .02em; }
+.fila .club { display: block; color: var(--suave); font-size: 14px; }
+.medalla, .pase {
+    display: inline-block; padding: 0 8px; border-radius: 4px; border: 1.5px solid transparent;
+    font-weight: 700; font-size: 12px; line-height: 19px; text-align: center;
+    text-transform: uppercase; letter-spacing: .05em; white-space: nowrap;
     -webkit-print-color-adjust: exact; print-color-adjust: exact;
 }
+.medalla { min-width: 76px; color: #fff; }
 .medalla.oro { background: var(--oro); }
 .medalla.plata { background: var(--plata); }
 .medalla.bronce { background: var(--bronce); }
-/* el pase se anuncia junto con la medalla */
-.pase {
-    display: inline-block; margin-left: 6px; padding: 0 6px; border: 1.5px solid currentColor; border-radius: 4px;
-    font-size: 12px; font-weight: 700; line-height: 19px; text-transform: uppercase; letter-spacing: .05em; white-space: nowrap;
-}
+.pase { border-color: currentColor; }
 
 .selector {
     border: 1px solid var(--linea); border-radius: 8px; background: var(--papel);
@@ -81,7 +83,7 @@ body:has(#modo-dos:checked) .modo-dos { display: block; }
 .bloque .sin-medallas, .pases.todos-con-medalla, .pases li.con-medalla, .pase.solo-sin-opcional { display: none; }
 body:has(#jp-menos-de-3:not(:checked)) .pase.solo-sin-opcional { display: inline-block; }
 body:has(#jp-menos-de-3:not(:checked)) .pases.todos-con-medalla { display: block; }
-body:has(#jp-menos-de-3:not(:checked)) .pases li.con-medalla { display: list-item; }
+body:has(#jp-menos-de-3:not(:checked)) .pases li.con-medalla { display: block; }
 body:has(#jp-menos-de-3:not(:checked)) .bloque.opcional .medallas { display: none; }
 body:has(#jp-menos-de-3:not(:checked)) .bloque.opcional .sin-medallas { display: block; }
 body:has(#jp-menos-de-3:not(:checked)) .bloque.solo-medallas,
@@ -111,8 +113,6 @@ table.pases tr { break-inside: avoid; }
 
 @media (max-width: 640px) {
     .hoja { padding: 16px; }
-    .medallas li { grid-template-columns: 1fr; gap: 2px; }
-    .medalla { width: 76px; }
 }
 
 @media print {
@@ -128,7 +128,8 @@ table.pases tr { break-inside: avoid; }
     .medalla.oro { background: #000; color: #fff; border-color: #000; }
     .medalla.plata { background: #fff; color: #000; border: 1.5px solid #000; }
     .medalla.bronce { background: #fff; color: #000; border: 1.5px dashed #000; }
-    .club, .bloque .sub, .encabezado .datos, .notas, table.pases th { color: #333; }
+    .fila { border-color: #bbb; }
+    .club, .bloque .sub, .bloque .destino, .encabezado .datos, .notas, table.pases th { color: #333; }
 }
 @endsection
 

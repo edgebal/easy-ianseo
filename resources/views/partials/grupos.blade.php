@@ -1,8 +1,6 @@
 {{-- Bloques del guion agrupados (Jóvenes Promesas / Escuela / Sub, 50+ y Mayores). Recibe $grupos. --}}
 @php
     use App\Medallero\Guion;
-    use App\Medallero\Informe;
-    $clases = [1 => 'oro', 2 => 'plata', 3 => 'bronce'];
 @endphp
 @foreach ($grupos as $g => $bloques)
     <section class="grupo">
@@ -17,28 +15,22 @@
                 @if ($b['pases'])
                     {{-- con_medalla: en podios opcionales, el medallista se anuncia con la medalla; acá solo si no se entregan --}}
                     <div @class(['pases', 'todos-con-medalla' => !array_filter($b['pases'], fn ($x) => empty($x['con_medalla']))])>
-                        <div class="titulo-pases">Pases de categoría ({{ str_starts_with($b['destino'], 'sin ') ? $b['destino'] : 'a ' . $b['destino'] }}):</div>
-                        <ul>
+                        <div class="destino">Pase de categoría {{ str_starts_with($b['destino'], 'sin ') ? '(' . $b['destino'] . ')' : 'a ' . $b['destino'] }}</div>
+                        <ul class="filas">
                             @foreach ($b['pases'] as $x)
-                                <li @class(['con-medalla' => !empty($x['con_medalla'])])>{{ $x['nombre'] }} <span class="club">{{ $x['club'] }}</span>@if (!empty($x['logro'])) <span class="anota">({{ $x['logro'] }})</span>@endif</li>
+                                <li @class(['fila', 'con-medalla' => !empty($x['con_medalla'])])>
+                                    @include('partials.fila', ['a' => $x, 'medalla' => null, 'pase' => $x, 'de' => null])
+                                </li>
                             @endforeach
                         </ul>
                     </div>
                 @endif
 
                 @if ($b['medallas'])
-                    <ul class="medallas">
+                    <ul class="filas medallas">
                         @foreach ($b['medallas'] as $a)
-                            <li>
-                                <span class="medalla {{ $clases[$a['puesto']] ?? '' }}">{{ Informe::MEDALLAS[$a['puesto']] ?? $a['puesto'] . 'º' }}</span>
-                                <span>
-                                    <span class="nombre">{{ $a['nombre'] }}</span>
-                                    @if ($a['otra_categoria'])<span class="anota">({{ $a['otra_categoria'] }})</span>@endif
-                                    <span class="club">{{ $a['club'] }}</span>
-                                    @if ($a['pase'])
-                                        <span @class(['pase', 'solo-sin-opcional' => !empty($a['pase']['solo_sin_opcional'])])>Pase ({{ $a['pase']['puntaje'] }}){{ !empty($a['pase']['logro']) ? ' · ' . $a['pase']['logro'] : '' }}</span>
-                                    @endif
-                                </span>
+                            <li class="fila">
+                                @include('partials.fila', ['a' => $a, 'medalla' => $a['puesto'], 'pase' => $a['pase'], 'de' => $a['otra_categoria']])
                             </li>
                         @endforeach
                     </ul>

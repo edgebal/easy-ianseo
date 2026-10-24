@@ -39,8 +39,8 @@ class MedalleroTest extends TestCase
             // grupos en el orden de la ceremonia
             ->assertSeeInOrder(['Jóvenes Promesas', 'Escuela', 'Sub, 50+ y Mayores', 'Anexo'])
             // bloque: pases primero, después Bronce, Plata, Oro; el medallista que pasa se anota
-            ->assertSeeInOrder(['Raso Escuela E20', 'Pases de categoría (a E30)', 'Muller Marcos',
-                'Bronce', 'Salva Diego Zenon', 'Pase (595)', 'Plata', 'Ferreccio', 'Oro', 'García Alejandra'])
+            ->assertSeeInOrder(['Raso Escuela E20', 'Pase de categoría a E30', 'MULLER', 'Marcos',
+                'Bronce', 'Pase (595)', 'SALVA', 'Diego Zenon', 'Plata', 'FERRECCIO', 'Oro', 'GARCÍA', 'Alejandra S.'])
             // por arco dentro de Mayores: Longbow, Raso, Compuesto, Recurvo
             ->assertSeeInOrder(['Sub, 50+ y Mayores', 'Longbow Masculino', 'Raso Masculino', 'Compuesto Masculino', 'Recurvo Masculino'])
             // anexo
@@ -116,9 +116,9 @@ class MedalleroTest extends TestCase
     {
         $this->assertSame(0, Artisan::call('medallero:pagina', ['archivo' => $this->export('FSJ-1810-FINAL-ORO-PLATA-BRONCE.ianseo')]));
         $texto = Artisan::output();
-        $this->assertStringContainsString('[BRONCE] Salva Diego Zenon — Tira Palitos [PASE (595)]', $texto);
-        $this->assertStringContainsString('[ORO] Castillo Josu — Cef 4 [PASE (634) · MAESTRO]', $texto);
-        $this->assertStringNotContainsString('Pases de categoría (a I20)', $texto); // Castillo ya se anuncia con el oro
+        $this->assertStringContainsString('[BRONCE] [PASE (595)] SALVA Diego Zenon — Tira Palitos', $texto);
+        $this->assertStringContainsString('[ORO] [PASE (634) - MAESTRO] CASTILLO Josu — Cef 4', $texto);
+        $this->assertStringNotContainsString('Pase de categoría a I20', $texto); // Castillo ya se anuncia con el oro
     }
 
     public function test_el_pase_se_anuncia_una_sola_vez_y_con_la_medalla(): void
@@ -130,12 +130,12 @@ class MedalleroTest extends TestCase
         };
         // acoplado Sub-15 con plata en la eliminatoria de Sub-18 y oro en su podio propio opcional
         $con = $pagina([]);
-        $this->assertStringContainsString('[ORO] Suarez Pablo León — C. A. Tiro Federal San Justo [PASE (603)]', $con);
+        $this->assertStringContainsString('[ORO] [PASE (603)] SUAREZ Pablo León — C. A. Tiro Federal San Justo', $con);
         $this->assertSame(1, substr_count($con, '[PASE (603)]'));
         // sin los opcionales, el pase va con la plata y no se lo anuncia aparte
         $sin = $pagina(['--sin-jp-opcional' => true]);
-        $this->assertSame(1, substr_count($sin, 'Suarez Pablo León'));
-        $this->assertStringContainsString('[PLATA] Suarez Pablo León (Recurvo JP-Jóvenes Promesas Sub-15 E20) — C. A. Tiro Federal San Justo [PASE (603)]', $sin);
+        $this->assertSame(1, substr_count($sin, 'SUAREZ Pablo León'));
+        $this->assertStringContainsString('[PLATA] [PASE (603)] SUAREZ Pablo León — C. A. Tiro Federal San Justo - de RU15E20', $sin);
     }
 
     public function test_comando_de_consola(): void

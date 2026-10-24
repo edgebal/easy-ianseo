@@ -117,6 +117,8 @@ final class IanseoExport
 		return [
 			'id' => (int)$enId,
 			'nombre' => trim($e['EnFirstName'] . ' ' . $e['EnName']),
+			'apellido' => trim($e['EnFirstName']), // IANSEO guarda el apellido en EnFirstName
+			'nombres' => trim($e['EnName']),
 			'club' => $club ? trim($club['CoName']) : '',
 			'categoria' => $this->categoria($enId),
 			'puntaje' => (int)$q['QuScore'],
