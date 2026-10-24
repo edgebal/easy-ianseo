@@ -11,7 +11,7 @@ namespace App\Medallero;
 //
 // Los pases de una categoría van en el bloque de su podio propio; si el arquero además tiene
 // medalla en ese podio, no se lo repite en los pases sino que se anota en su línea. En los podios
-// opcionales (JP acopladas o con menos de 3, que solo se entregan con las reglas antiguas) el medallista queda también en la lista de
+// opcionales (JP sin eliminatoria, Escuela con 2 o menos: se entregan o no según el selector) el medallista queda también en la lista de
 // pases, marcado con_medalla: la página lo muestra ahí solo cuando esas medallas no se entregan.
 
 final class Guion
@@ -58,7 +58,7 @@ final class Guion
 		// categorías con pases pero sin podio terminado (p. ej. eliminatoria pendiente)
 		foreach ($pasesPorCat as $cat => $pases) {
 			$bloques[] = self::bloque($cat, $pases[0]['nombre_categoria'], 'podio pendiente', [], $pases, true, $sala)
-				+ ['eliminatorias' => false, 'categorias' => [$cat], 'opcional' => false, 'acoplada' => false, 'propia' => $cat];
+				+ ['eliminatorias' => false, 'categorias' => [$cat], 'opcional' => null, 'acoplada' => false, 'propia' => $cat];
 		}
 
 		usort($bloques, fn($a, $b) => $a['orden'] <=> $b['orden']);
@@ -115,7 +115,7 @@ final class Guion
 
 	// Un acoplado que tiene medalla en la eliminatoria de otra categoría recibe el pase con esa medalla,
 	// salvo que ya lo reciba con la de su podio propio. Si ese podio propio es opcional, en la otra medalla
-	// el pase se anuncia solo cuando el opcional no se entrega (solo_sin_opcional).
+	// el pase se anuncia solo cuando el opcional no se entrega (solo_sin_opcional: el tipo de opcional).
 	private static function paseConMedallaDeOtroPodio(array &$bloques): void
 	{
 		$medallaDe = []; // id => [bloque, medalla] en podios que siempre se entregan, el primero de la ceremonia
@@ -130,7 +130,7 @@ final class Guion
 				if ($oi === null || $oi == $i) continue;
 				$propia = in_array($x['id'], $enPropio, true);
 				if ($propia && !$b['opcional']) continue;
-				$bloques[$oi]['medallas'][$oj]['pase'] = $x + ['solo_sin_opcional' => $propia];
+				$bloques[$oi]['medallas'][$oj]['pase'] = $x + ['solo_sin_opcional' => $propia ? $b['opcional'] : null];
 				unset($b['pases'][$k]);
 			}
 			$b['pases'] = array_values($b['pases']);

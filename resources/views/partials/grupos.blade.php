@@ -6,11 +6,15 @@
     <section class="grupo">
         <h2>{{ Guion::GRUPOS[$g] }}</h2>
         @foreach ($bloques as $b)
-            {{-- opcional: JP acoplada o con menos de 3 sin eliminatoria (solo con reglas antiguas); sin pases, el bloque entero depende del selector --}}
-            <div @class(['bloque', 'opcional' => $b['opcional'], 'solo-medallas' => $b['opcional'] && !$b['pases']])>
+            {{-- opcional ('jp' o 'escuela'): sus medallas dependen del selector; sin pases, el bloque entero --}}
+            <div @class(['bloque', 'opcional-' . $b['opcional'] => $b['opcional'], 'solo-medallas' => $b['opcional'] && !$b['pases']])>
                 <h3>{{ $b['nombre'] }}</h3>
                 @if ($b['subtitulo'])<div class="sub">{{ $b['subtitulo'] }}</div>@endif
-                @if ($b['opcional'])<div class="sub sin-medallas">{{ $b['acoplada'] ? 'sin podio propio: en JP las categorías acopladas se premian solo en la eliminatoria (arts. 14.3 y 14.4)' : 'sin medallas: menos de 3 arqueros y sin eliminatoria (art. 14.4)' }}</div>@endif
+                @if ($b['opcional'])<div class="sub sin-medallas">{{ match (true) {
+                    $b['opcional'] == 'escuela' => 'sin podio: 2 o menos arqueros (art. 11.2)',
+                    $b['acoplada'] => 'sin podio propio: en JP las categorías acopladas se premian solo en la eliminatoria (arts. 14.3 y 14.4)',
+                    default => 'sin medallas: en JP se premia solo la eliminatoria (art. 14.4)',
+                } }}</div>@endif
 
                 @if ($b['pases'])
                     {{-- con_medalla: en podios opcionales, el medallista se anuncia con la medalla; acá solo si no se entregan --}}

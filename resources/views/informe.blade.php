@@ -8,7 +8,9 @@
     $fechas = $fecha($t['desde']) . ($t['hasta'] != $t['desde'] ? ' al ' . $fecha($t['hasta']) : '');
     $grupos = Guion::armar($inf);
     $tandas = Guion::tandas($inf);
-    $hayOpcionales = collect($inf->medallero)->contains('opcional', true);
+    // podios opcionales => checkbox que los entrega (sin marcar: no se entregan)
+    $opcionales = array_intersect_key(['jp' => 'jp-reglas-antiguas', 'escuela' => 'escuela-hasta-2'],
+        array_flip(array_filter(array_column($inf->medallero, 'opcional'))));
     $tituloTanda = [1 => '1ª tanda — categorías sin eliminatorias', 2 => '2ª tanda — categorías con eliminatorias (propias o acopladas)'];
 @endphp
 
@@ -89,16 +91,21 @@ body:has(#modo-dos:checked):has(#imp-2:checked) .tanda-1,
 body:has(#con-anexo:not(:checked)) .anexo,
 body:has(#modo-dos:checked):has(#imp-1:checked) .anexo,
 body:has(#modo-dos:checked):has(#imp-1:checked) .op-anexo { display: none; }
-/* JP con menos de 3 sin eliminatoria: el art. 14.4 no los premia, algunos clubes sí */
-.bloque .sin-medallas, .pases.todos-con-medalla, .pases li.con-medalla, .pase.solo-sin-opcional { display: none; }
-body:has(#jp-reglas-antiguas:not(:checked)) .pase.solo-sin-opcional { display: inline-block; }
-body:has(#jp-reglas-antiguas:not(:checked)) .pases.todos-con-medalla { display: block; }
-body:has(#jp-reglas-antiguas:not(:checked)) .pases li.con-medalla { display: block; }
-body:has(#jp-reglas-antiguas:not(:checked)) .bloque.opcional .medallas { display: none; }
-body:has(#jp-reglas-antiguas:not(:checked)) .bloque.opcional .sin-medallas { display: block; }
-body:has(#jp-reglas-antiguas:not(:checked)) .bloque.solo-medallas,
-body:has(#jp-reglas-antiguas:not(:checked)) .grupo:not(:has(.bloque:not(.solo-medallas))),
-body:has(#jp-reglas-antiguas:not(:checked)) .tanda:not(:has(.bloque:not(.solo-medallas))) { display: none; }
+/* podios opcionales (JP sin eliminatoria, Escuela con 2 o menos): con su checkbox sin marcar no se entregan */
+.bloque .sin-medallas, .pases.todos-con-medalla, .pases li.con-medalla, .pase.solo-sin-jp, .pase.solo-sin-escuela { display: none; }
+@foreach (['jp' => 'jp-reglas-antiguas', 'escuela' => 'escuela-hasta-2'] as $tipo => $id)
+body:has(#{{ $id }}:not(:checked)) .pase.solo-sin-{{ $tipo }} { display: inline-block; }
+body:has(#{{ $id }}:not(:checked)) .opcional-{{ $tipo }} .pases.todos-con-medalla { display: block; }
+body:has(#{{ $id }}:not(:checked)) .opcional-{{ $tipo }} .pases li.con-medalla { display: block; }
+body:has(#{{ $id }}:not(:checked)) .opcional-{{ $tipo }} .medallas { display: none; }
+body:has(#{{ $id }}:not(:checked)) .opcional-{{ $tipo }} .sin-medallas { display: block; }
+body:has(#{{ $id }}:not(:checked)) .bloque.solo-medallas.opcional-{{ $tipo }},
+body:has(#{{ $id }}:not(:checked)) .grupo:not(:has(.bloque:not(.solo-medallas.opcional-{{ $tipo }}))),
+body:has(#{{ $id }}:not(:checked)) .tanda:not(:has(.bloque:not(.solo-medallas.opcional-{{ $tipo }}))) { display: none; }
+@endforeach
+/* con los dos sin marcar, grupos y tandas que solo tienen opcionales de uno y otro tipo */
+body:has(#jp-reglas-antiguas:not(:checked)):has(#escuela-hasta-2:not(:checked)) .grupo:not(:has(.bloque:not(.solo-medallas))),
+body:has(#jp-reglas-antiguas:not(:checked)):has(#escuela-hasta-2:not(:checked)) .tanda:not(:has(.bloque:not(.solo-medallas))) { display: none; }
 .titulo-tanda {
     font-size: 19px; margin: 26px 0 0; padding: 8px 12px;
     border: 2px solid var(--tinta); border-radius: 6px;
@@ -169,11 +176,16 @@ table.pases tr { break-inside: avoid; }
         <div class="opcion op-anexo">
             <label><input type="checkbox" id="con-anexo" checked> Incluir el anexo (pendientes, avisos y quienes no pasan)</label>
         </div>
-        @if ($hayOpcionales)
+        @isset($opcionales['jp'])
             <div class="opcion">
-                <label><input type="checkbox" id="jp-reglas-antiguas"> Reglas antiguas de premiación JP: podio por clasificación a las categorías acopladas y a las de menos de 3 sin eliminatoria, como en Mayores (las normas premian solo las eliminatorias, arts. 14.3 y 14.4)</label>
+                <label><input type="checkbox" id="jp-reglas-antiguas"> Reglas antiguas de premiación JP: podio por clasificación a las categorías sin eliminatoria, como en Mayores (las normas premian solo las eliminatorias, arts. 12.4, 14.3 y 14.4)</label>
             </div>
-        @endif
+        @endisset
+        @isset($opcionales['escuela'])
+            <div class="opcion">
+                <label><input type="checkbox" id="escuela-hasta-2" checked> Podio a Escuela con 2 o menos arqueros sin eliminatoria (no obligatorio, art. 11.2)</label>
+            </div>
+        @endisset
     </fieldset>
 
     <article class="hoja">

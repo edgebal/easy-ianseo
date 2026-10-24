@@ -144,6 +144,25 @@ class MedalleroTest extends TestCase
         $this->assertSame(1, substr_count($antiguas, '[PASE (603)]'));
     }
 
+    public function test_jp_sin_eliminatoria_no_lleva_medallas_y_escuela_con_2_o_menos_si(): void
+    {
+        $ruta = $this->export('ADASJ263_FATARCO.ianseo');
+        $pagina = function (array $opciones) use ($ruta) {
+            Artisan::call('medallero:pagina', ['archivo' => $ruta] + $opciones);
+            return explode('## Anexo', Artisan::output())[0];
+        };
+        // por defecto: JP sin eliminatoria (aunque sean 3 o más) solo anuncia pases; Escuela con 2 o menos tiene podio
+        $defecto = $pagina([]);
+        $this->assertStringContainsString("Pase de categoría a I20\n\n  - [PASE (545)] CRISTALDO Sebastián", $defecto);
+        $this->assertStringNotContainsString('SANCHEZ Angel', $defecto);
+        $this->assertStringContainsString('[ORO] [PASE (624)] PATANE Maximiliano Jesús', $defecto);
+        // invertidas las dos opciones
+        $invertido = $pagina(['--jp-reglas-antiguas' => true, '--sin-escuela-hasta-2' => true]);
+        $this->assertStringContainsString('[BRONCE] SANCHEZ Angel', $invertido);
+        $this->assertStringContainsString('[ORO] [PASE (545)] CRISTALDO Sebastián', $invertido);
+        $this->assertStringContainsString("sin podio: 2 o menos arqueros (art. 11.2)\n\nPase de categoría a E30\n\n  - [PASE (624)] PATANE Maximiliano Jesús", $invertido);
+    }
+
     public function test_las_acopladas_se_premian_justo_antes_de_su_eliminatoria(): void
     {
         // con las reglas antiguas, para que estén también los podios propios de las JP acopladas

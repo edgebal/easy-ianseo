@@ -11,9 +11,11 @@ namespace App\Medallero;
 // torneo en IANSEO: la anfitriona (EvCode == División.Clase). Solo si ninguna coincide con el código se
 // toma la de 3 o más (o la de más arqueros). Un acople entre pares es uno en el que alguna invitada no es una
 // inclusión reglamentaria (juveniles en Mayores, 13.2.2.c / 15.3.2.c; adaptados en la convencional, 18.5.1).
-// Las categorías acopladas llevan además su podio propio por clasificación. En JP ese podio (y el de una
-// categoría con menos de 3 sin eliminatoria) queda marcado como opcional: los arts. 14.3 y 14.4 solo premian
-// las eliminatorias; se entrega únicamente con las reglas antiguas de premiación JP.
+// Las categorías acopladas llevan además su podio propio por clasificación. Quedan marcados como opcionales:
+// - 'jp': todo podio JP sin eliminatoria (acoplada, con menos de 3 o porque no se eliminó): los arts. 12.4,
+//   14.3 y 14.4 solo premian las eliminatorias; se entrega únicamente con las reglas antiguas de premiación JP.
+// - 'escuela': Escuela (también adaptada, 18.6) con 2 o menos sin eliminatoria: el art. 11.2 no lo hace
+//   obligatorio; por defecto se entrega.
 
 final class Medallero
 {
@@ -82,9 +84,12 @@ final class Medallero
 
 		foreach ($podios as &$p) {
 			$p['acoplada_en'] = $p['eliminatorias'] ? [] : array_values(array_unique($huesped[$p['propia']] ?? []));
-			// JP acoplada o con menos de 3 que no eliminó: los arts. 14.3 y 14.4 no la premian por separado
-			$p['opcional'] = !$p['eliminatorias'] && self::esJP($p['propia'])
-				&& ($p['acoplada_en'] || count($porCategoria[$p['propia']] ?? []) < $minimo);
+			$p['opcional'] = match (true) {
+				$p['eliminatorias'] => null,
+				self::esJP($p['propia']) => 'jp',
+				self::esEscuela($p['propia']) && count($porCategoria[$p['propia']] ?? []) < $minimo => 'escuela',
+				default => null,
+			};
 		}
 		unset($p);
 		return $podios;
@@ -93,6 +98,11 @@ final class Medallero
 	public static function esJP(string $cat): bool
 	{
 		return (bool)preg_match('/^U1[358][EI]\d+$/', explode('/', $cat, 2)[1] ?? '');
+	}
+
+	public static function esEscuela(string $cat): bool
+	{
+		return (bool)preg_match('/^E\d+$/', explode('/', $cat, 2)[1] ?? '');
 	}
 
 	// [categoría que recibió a las otras, si es un acople entre pares]

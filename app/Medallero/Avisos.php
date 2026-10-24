@@ -92,7 +92,7 @@ final class Avisos
 			$n = count($ids);
 			$nombre = $this->t->nombreCategoria($cat);
 			if ($n >= $minimo) {
-				$avisos[] = "$nombre ($n): sin eliminatoria; en Jóvenes Promesas se premia por eliminatorias (art. 14.4). Se muestra el podio por clasificación.";
+				$avisos[] = "$nombre ($n): sin eliminatoria; en Jóvenes Promesas se premia solo por eliminatorias (art. 14.4): sin medallas, salvo con las reglas antiguas de premiación JP.";
 			} elseif (!empty($jpElim[$k])) {
 				$avisos[] = "$nombre ($n): hubo eliminatoria JP de la misma distancia y esta categoría no se acopló (art. 14.3).";
 			} elseif (count($jpDistancia[$k]) > 1) {

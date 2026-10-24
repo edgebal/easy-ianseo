@@ -77,7 +77,8 @@ final class Informe
 		$extra[] = $p['eliminatorias'] ? 'por eliminatorias' : 'por clasificación';
 		if (count($p['categorias']) > 1) $extra[] = 'acopla ' . implode(' + ', $p['categorias']);
 		if ($p['acoplada_en']) $extra[] = 'categoría propia, eliminó acoplada en ' . implode(', ', $p['acoplada_en']);
-		if ($p['opcional']) $extra[] = 'solo con reglas antiguas de premiación JP (arts. 14.3 y 14.4)';
+		if ($p['opcional'] == 'jp') $extra[] = 'solo con reglas antiguas de premiación JP (arts. 14.3 y 14.4)';
+		if ($p['opcional'] == 'escuela') $extra[] = 'Escuela con 2 o menos: podio no obligatorio (art. 11.2)';
 		return implode(', ', $extra);
 	}
 

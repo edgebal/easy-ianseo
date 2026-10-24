@@ -9,14 +9,14 @@ use DOMXPath;
 
 // La página del guion (la misma vista que se imprime) pasada a texto, para revisarla desde la consola.
 // Aplica a mano lo que en el navegador deciden los selectores: una o dos tandas y si se muestran
-// los podios opcionales de JP (reglas antiguas de premiación).
+// los podios opcionales de JP (reglas antiguas de premiación) y de Escuela con 2 o menos.
 
 final class TextoDePagina
 {
 	private const BLOQUES = ['h1', 'h2', 'h3', 'p', 'div', 'li', 'tr', 'section', 'header', 'fieldset', 'ul', 'table'];
 
 	// $tanda: en dos tandas, imprimir solo la 1 o la 2 (null = todo). La 1ª tanda nunca lleva anexo.
-	public static function convertir(string $html, bool $dosTandas = false, bool $jpReglasAntiguas = false, ?int $tanda = null, bool $anexo = true): string
+	public static function convertir(string $html, bool $dosTandas = false, bool $jpReglasAntiguas = false, ?int $tanda = null, bool $anexo = true, bool $escuelaHasta2 = true): string
 	{
 		$doc = new DOMDocument();
 		@$doc->loadHTML('<?xml encoding="utf-8"?>' . $html, LIBXML_NOERROR);
@@ -24,23 +24,24 @@ final class TextoDePagina
 		$clase = fn(string $c) => "contains(concat(' ', normalize-space(@class), ' '), ' $c ')";
 
 		$ocultar = ['//*[' . $clase($dosTandas ? 'modo-una' : 'modo-dos') . ']', '//*[' . $clase('barra') . ']', '//*[' . $clase('selector') . ']'];
-		if ($jpReglasAntiguas) {
-			$ocultar[] = '//*[' . $clase('sin-medallas') . ']';
-			$ocultar[] = '//*[' . $clase('todos-con-medalla') . ']';
-			$ocultar[] = '//li[' . $clase('con-medalla') . ']';
-			$ocultar[] = '//*[' . $clase('solo-sin-opcional') . ']';
-		} else {
-			$ocultar[] = '//*[' . $clase('opcional') . ']//*[' . $clase('medallas') . ']';
-			$ocultar[] = '//*[' . $clase('solo-medallas') . ']';
+		foreach (['jp' => $jpReglasAntiguas, 'escuela' => $escuelaHasta2] as $tipo => $seEntrega) {
+			$bloque = '//*[' . $clase('opcional-' . $tipo) . ']';
+			if ($seEntrega) {
+				$ocultar[] = "$bloque//*[" . $clase('sin-medallas') . ']';
+				$ocultar[] = "$bloque//*[" . $clase('todos-con-medalla') . ']';
+				$ocultar[] = "$bloque//li[" . $clase('con-medalla') . ']';
+				$ocultar[] = '//*[' . $clase('solo-sin-' . $tipo) . ']';
+			} else {
+				$ocultar[] = "$bloque//*[" . $clase('medallas') . ']';
+				$ocultar[] = $bloque . '[' . $clase('solo-medallas') . ']';
+			}
 		}
 		if ($dosTandas && $tanda) $ocultar[] = '//*[' . $clase('tanda-' . (3 - $tanda)) . ']';
 		if (!$anexo || ($dosTandas && $tanda == 1)) $ocultar[] = '//*[' . $clase('anexo') . ']';
 		foreach ($ocultar as $q) self::quitar($x->query($q));
-		if (!$jpReglasAntiguas) {
-			// grupos y tandas que quedaron sin bloques
-			foreach (['grupo', 'tanda'] as $c) {
-				self::quitar($x->query('//*[' . $clase($c) . '][not(.//*[' . $clase('bloque') . '])]'));
-			}
+		// grupos y tandas que quedaron sin bloques
+		foreach (['grupo', 'tanda'] as $c) {
+			self::quitar($x->query('//*[' . $clase($c) . '][not(.//*[' . $clase('bloque') . '])]'));
 		}
 
 		$hoja = $x->query('//*[' . $clase('hoja') . ']')->item(0) ?? $doc->documentElement;
