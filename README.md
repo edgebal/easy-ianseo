@@ -2,9 +2,9 @@
 
 Subís el export de un torneo de IANSEO (`.ianseo`) y te arma una página lista para imprimir (Ctrl+P) con:
 
-- **Medallero** de los eventos finalizados: por eliminatorias o por clasificación, según cómo se armó el torneo en IANSEO, incluyendo los acoplamientos (cada acoplado tiene también podio en su categoría propia).
+- **Medallero** de los eventos finalizados: por eliminatorias o por clasificación, según cómo se armó el torneo en IANSEO, incluyendo los acoplamientos: la eliminatoria es el podio de la categoría que recibió a las otras (la de 3 o más) y cada acoplado tiene también podio en su categoría propia. Los podios de JP con menos de 3 sin eliminatoria (art. 14.4) se pueden mostrar u ocultar desde el guion.
 - **Pendientes**: eventos que todavía no terminaron (no entran al medallero).
-- **Avisos de normas**: eliminatorias con menos de 3, juveniles no incluidos en Mayores, JP sin acoplar, etc.
+- **Avisos de normas** (en el anexo; las decisiones son del jurado u organizador): eliminatorias con menos de 3, más de 2 byes (asumiendo torneo regular), encuentros perdidos sin tirar (posible abandono), juveniles no incluidos en Mayores, JP sin eliminatoria o sin acoplar, adaptados de salón sin eliminatoria, etc.
 - **Pases de categoría** de Escuela y Jóvenes Promesas (aire libre y salón), con Maestro/Excelencia en JP.
 
 Los puntajes y reglas están en `resources/normas/fatarco-2026.php` (Normas FATARCO 2026). Para otra temporada se agrega otro archivo y se cambia `config/medallero.php` o `MEDALLERO_NORMAS` en el `.env`.

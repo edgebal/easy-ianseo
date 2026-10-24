@@ -76,7 +76,8 @@ final class Informe
 		$extra = [$p['participantes'] . ' arq.'];
 		$extra[] = $p['eliminatorias'] ? 'por eliminatorias' : 'por clasificación';
 		if (count($p['categorias']) > 1) $extra[] = 'acopla ' . implode(' + ', $p['categorias']);
-		if ($p['tipo'] == 'categoria') $extra[] = 'categoría propia de acoplados';
+		if ($p['acoplada_en']) $extra[] = 'categoría propia, eliminó acoplada en ' . implode(', ', $p['acoplada_en']);
+		if ($p['opcional']) $extra[] = 'opcional: JP con menos de 3 (art. 14.4)';
 		return implode(', ', $extra);
 	}
 

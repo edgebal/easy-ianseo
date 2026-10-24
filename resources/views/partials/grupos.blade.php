@@ -8,9 +8,11 @@
     <section class="grupo">
         <h2>{{ Guion::GRUPOS[$g] }}</h2>
         @foreach ($bloques as $b)
-            <div class="bloque">
+            {{-- opcional: JP con menos de 3 sin eliminatoria; sin pases, el bloque entero depende del selector --}}
+            <div @class(['bloque', 'opcional' => $b['opcional'], 'solo-medallas' => $b['opcional'] && !$b['pases']])>
                 <h3>{{ $b['nombre'] }}</h3>
                 @if ($b['subtitulo'])<div class="sub">{{ $b['subtitulo'] }}</div>@endif
+                @if ($b['opcional'])<div class="sub sin-medallas">sin medallas: menos de 3 arqueros y sin eliminatoria (art. 14.4)</div>@endif
 
                 @if ($b['pases'])
                     <div class="titulo-pases">Pases de categoría ({{ str_starts_with($b['destino'], 'sin ') ? $b['destino'] : 'a ' . $b['destino'] }}):</div>

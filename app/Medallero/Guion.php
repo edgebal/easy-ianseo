@@ -10,7 +10,8 @@ namespace App\Medallero;
 // fácil a lo más difícil (edad y distancia; en salón el blanco más grande primero).
 //
 // Los pases de una categoría van en el bloque de su podio propio; si el arquero además tiene
-// medalla en ese podio, no se lo repite en los pases sino que se anota en su línea.
+// medalla en ese podio, no se lo repite en los pases sino que se anota en su línea. En los podios
+// opcionales (JP con menos de 3, que se pueden no entregar) los pases se listan todos igual.
 
 final class Guion
 {
@@ -40,20 +41,20 @@ final class Guion
 
 			$medallas = [];
 			foreach (array_reverse($p['podio']) as $a) { // Bronce → Plata → Oro
-				$pase = $cat && in_array($a['id'], $idsPase, true) ? $pases[array_search($a['id'], $idsPase)] : null;
-				// en eventos acoplados se aclara la categoría de quien no es de la anfitriona
-				$otraCat = $a['categoria'] != $p['anfitriona'] ? $p['nombres_categorias'][$a['categoria']] : null;
+				$pase = !$p['opcional'] && in_array($a['id'], $idsPase, true) ? $pases[array_search($a['id'], $idsPase)] : null;
+				// en eventos acoplados se aclara la categoría de quien no es de la que recibió
+				$otraCat = $a['categoria'] != $cat ? $p['nombres_categorias'][$a['categoria']] : null;
 				$medallas[] = $a + ['pase' => $pase, 'otra_categoria' => $otraCat];
 			}
-			$bloques[] = self::bloque($p['anfitriona'], $p['nombre'], self::subtitulo($p), $medallas,
-				array_values(array_filter($pases, fn($x) => !in_array($x['id'], $enPodio, true))), $p['tipo'] == 'categoria', $sala)
-				+ ['eliminatorias' => $p['eliminatorias'], 'categorias' => $p['categorias']];
+			$sinRepetir = $p['opcional'] ? $pases : array_values(array_filter($pases, fn($x) => !in_array($x['id'], $enPodio, true)));
+			$bloques[] = self::bloque($cat, $p['nombre'], self::subtitulo($p), $medallas, $sinRepetir, $p['tipo'] == 'categoria', $sala)
+				+ ['eliminatorias' => $p['eliminatorias'], 'categorias' => $p['categorias'], 'opcional' => $p['opcional']];
 		}
 
 		// categorías con pases pero sin podio terminado (p. ej. eliminatoria pendiente)
 		foreach ($pasesPorCat as $cat => $pases) {
 			$bloques[] = self::bloque($cat, $pases[0]['nombre_categoria'], 'podio pendiente', [], $pases, true, $sala)
-				+ ['eliminatorias' => false, 'categorias' => [$cat]];
+				+ ['eliminatorias' => false, 'categorias' => [$cat], 'opcional' => false];
 		}
 
 		usort($bloques, fn($a, $b) => $a['orden'] <=> $b['orden']);
@@ -124,9 +125,10 @@ final class Guion
 
 	private static function subtitulo(array $p): ?string
 	{
+		if ($p['acoplada_en']) return 'categoría propia (eliminó acoplada en ' . implode(', ', $p['acoplada_en']) . ')';
 		if ($p['tipo'] == 'categoria') return 'categoría propia';
-		if ($p['propia'] === null) {
-			$otras = array_diff_key($p['nombres_categorias'], [$p['anfitriona'] => 1]);
+		if ($p['acople']) {
+			$otras = array_diff_key($p['nombres_categorias'], [$p['propia'] => 1]);
 			return 'eliminatoria acoplada con ' . implode(', ', $otras);
 		}
 		return null;

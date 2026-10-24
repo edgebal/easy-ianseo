@@ -8,6 +8,7 @@
     $fechas = $fecha($t['desde']) . ($t['hasta'] != $t['desde'] ? ' al ' . $fecha($t['hasta']) : '');
     $grupos = Guion::armar($inf);
     $tandas = Guion::tandas($inf);
+    $hayOpcionales = collect($inf->medallero)->contains('opcional', true);
     $tituloTanda = [1 => '1ª tanda — categorías sin eliminatorias', 2 => '2ª tanda — categorías con eliminatorias (propias o acopladas)'];
 @endphp
 
@@ -71,6 +72,11 @@
 .modo-dos { display: none; }
 body:has(#modo-dos:checked) .modo-una { display: none; }
 body:has(#modo-dos:checked) .modo-dos { display: block; }
+/* JP con menos de 3 sin eliminatoria: el art. 14.4 no los premia, algunos clubes sí */
+.bloque .sin-medallas { display: none; }
+body:has(#jp-menos-de-3:not(:checked)) .bloque.opcional .medallas { display: none; }
+body:has(#jp-menos-de-3:not(:checked)) .bloque.opcional .sin-medallas { display: block; }
+body:has(#jp-menos-de-3:not(:checked)) .bloque.solo-medallas { display: none; }
 .titulo-tanda {
     font-size: 19px; margin: 26px 0 0; padding: 8px 12px;
     border: 2px solid var(--tinta); border-radius: 6px;
@@ -126,6 +132,9 @@ table.pases tr { break-inside: avoid; }
         <legend>Entrega</legend>
         <label><input type="radio" name="modo" id="modo-una" checked> Una tanda</label>
         <label><input type="radio" name="modo" id="modo-dos"> Dos tandas (primero sin eliminatorias, después con eliminatorias)</label>
+        @if ($hayOpcionales)
+            <label><input type="checkbox" id="jp-menos-de-3" checked> Medallas a JP con menos de 3 arqueros sin eliminatoria (por clasificación, como en Mayores)</label>
+        @endif
     </fieldset>
 
     <article class="hoja">
