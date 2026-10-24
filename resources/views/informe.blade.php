@@ -71,14 +71,24 @@
 .selector {
     border: 1px solid var(--linea); border-radius: 8px; background: var(--papel);
     max-width: 820px; margin: 0 auto 16px; padding: 10px 16px;
-    display: flex; flex-wrap: wrap; gap: 6px 22px; align-items: center;
+    display: grid; gap: 8px;
 }
-.selector legend { float: left; font-weight: 600; padding: 0; margin-right: 6px; }
+.selector .oculto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.selector .opcion { display: flex; flex-wrap: wrap; gap: 6px 22px; align-items: center; }
+.selector .rotulo { font-weight: 600; min-width: 64px; }
 .selector label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
 /* el selector elige qué versión del guion se ve (y se imprime) */
 .modo-dos { display: none; }
 body:has(#modo-dos:checked) .modo-una { display: none; }
 body:has(#modo-dos:checked) .modo-dos { display: block; }
+/* en dos tandas se puede imprimir una sola; la 1ª tanda nunca lleva anexo */
+.solo-dos { display: none !important; }
+body:has(#modo-dos:checked) .solo-dos { display: flex !important; }
+body:has(#modo-dos:checked):has(#imp-1:checked) .tanda-2,
+body:has(#modo-dos:checked):has(#imp-2:checked) .tanda-1,
+body:has(#con-anexo:not(:checked)) .anexo,
+body:has(#modo-dos:checked):has(#imp-1:checked) .anexo,
+body:has(#modo-dos:checked):has(#imp-1:checked) .op-anexo { display: none; }
 /* JP con menos de 3 sin eliminatoria: el art. 14.4 no los premia, algunos clubes sí */
 .bloque .sin-medallas, .pases.todos-con-medalla, .pases li.con-medalla, .pase.solo-sin-opcional { display: none; }
 body:has(#jp-menos-de-3:not(:checked)) .pase.solo-sin-opcional { display: inline-block; }
@@ -93,8 +103,9 @@ body:has(#jp-menos-de-3:not(:checked)) .tanda:not(:has(.bloque:not(.solo-medalla
     font-size: 19px; margin: 26px 0 0; padding: 8px 12px;
     border: 2px solid var(--tinta); border-radius: 6px;
 }
-/* salto después de cada tanda y no antes: si la primera queda vacía y oculta, no deja hoja en blanco */
-.tanda:not(:last-child) { break-after: page; }
+/* salto después de la 1ª tanda y no antes de la 2ª: si una de las dos no se muestra, no deja hoja en blanco */
+.tanda-1 { break-after: page; }
+body:has(#imp-1:checked) .tanda-1 { break-after: auto; }
 
 .anexo { break-before: page; }
 .anexo > h2 {
@@ -140,12 +151,28 @@ table.pases tr { break-inside: avoid; }
         <span class="archivo">{{ $archivo }}</span>
         <button class="boton" type="button" onclick="window.print()">Imprimir</button>
     </div>
+    {{-- opciones de la entrega: deciden qué se ve y, por lo tanto, qué se imprime --}}
     <fieldset class="selector">
-        <legend>Entrega</legend>
-        <label><input type="radio" name="modo" id="modo-una" checked> Una tanda</label>
-        <label><input type="radio" name="modo" id="modo-dos"> Dos tandas (primero sin eliminatorias, después con eliminatorias)</label>
+        <legend class="oculto">Opciones de la entrega</legend>
+        <div class="opcion">
+            <span class="rotulo">Entrega</span>
+            <label><input type="radio" name="modo" id="modo-una" checked> Una tanda</label>
+            <label><input type="radio" name="modo" id="modo-dos"> Dos tandas (primero sin eliminatorias, después con eliminatorias)</label>
+        </div>
+        <div class="opcion solo-dos">
+            <span class="rotulo">Imprimir</span>
+            <label><input type="radio" name="imprimir" id="imp-todo" checked> Todo</label>
+            @foreach ($tandas as $n => $_)
+                <label><input type="radio" name="imprimir" id="imp-{{ $n }}"> Tanda {{ $n }}</label>
+            @endforeach
+        </div>
+        <div class="opcion op-anexo">
+            <label><input type="checkbox" id="con-anexo" checked> Incluir el anexo (pendientes, avisos y quienes no pasan)</label>
+        </div>
         @if ($hayOpcionales)
-            <label><input type="checkbox" id="jp-menos-de-3" checked> Medallas a JP con menos de 3 arqueros sin eliminatoria (por clasificación, como en Mayores)</label>
+            <div class="opcion">
+                <label><input type="checkbox" id="jp-menos-de-3" checked> Medallas a JP con menos de 3 arqueros sin eliminatoria (por clasificación, como en Mayores)</label>
+            </div>
         @endif
     </fieldset>
 
@@ -170,7 +197,7 @@ table.pases tr { break-inside: avoid; }
 
         <div class="modo-dos">
             @foreach ($tandas as $n => $gruposTanda)
-                <section class="tanda">
+                <section class="tanda tanda-{{ $n }}">
                     <h2 class="titulo-tanda">{{ $tituloTanda[$n] }}</h2>
                     @include('partials.grupos', ['grupos' => $gruposTanda])
                 </section>

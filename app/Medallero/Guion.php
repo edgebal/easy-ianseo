@@ -52,16 +52,17 @@ final class Guion
 				? array_map(fn($x) => $x + ['con_medalla' => $conMedalla($x)], $pases)
 				: array_values(array_filter($pases, fn($x) => !$conMedalla($x)));
 			$bloques[] = self::bloque($cat, $p['nombre'], self::subtitulo($p), $medallas, $sinRepetir, $p['tipo'] == 'categoria', $sala)
-				+ ['eliminatorias' => $p['eliminatorias'], 'categorias' => $p['categorias'], 'opcional' => $p['opcional'], 'acoplada' => (bool)$p['acoplada_en']];
+				+ ['eliminatorias' => $p['eliminatorias'], 'categorias' => $p['categorias'], 'opcional' => $p['opcional'], 'acoplada' => (bool)$p['acoplada_en'], 'propia' => $cat];
 		}
 
 		// categorías con pases pero sin podio terminado (p. ej. eliminatoria pendiente)
 		foreach ($pasesPorCat as $cat => $pases) {
 			$bloques[] = self::bloque($cat, $pases[0]['nombre_categoria'], 'podio pendiente', [], $pases, true, $sala)
-				+ ['eliminatorias' => false, 'categorias' => [$cat], 'opcional' => false, 'acoplada' => false];
+				+ ['eliminatorias' => false, 'categorias' => [$cat], 'opcional' => false, 'acoplada' => false, 'propia' => $cat];
 		}
 
 		usort($bloques, fn($a, $b) => $a['orden'] <=> $b['orden']);
+		$bloques = self::acopladasAntesDeSuEliminatoria($bloques);
 		self::paseConMedallaDeOtroPodio($bloques);
 
 		$grupos = [];
@@ -87,6 +88,29 @@ final class Guion
 			}
 		}
 		return array_filter($tandas);
+	}
+
+	// Los podios propios de las categorías que se acoplaron se entregan justo antes de la eliminatoria
+	// que las recibió (para cerrar con la eliminatoria), aunque por edad o arco irían en otro lugar.
+	private static function acopladasAntesDeSuEliminatoria(array $bloques): array
+	{
+		$host = []; // categoría acoplada => índice del bloque de la eliminatoria que la recibió
+		foreach ($bloques as $i => $b) {
+			if (!$b['eliminatorias']) continue;
+			foreach ($b['categorias'] as $c) if ($c != $b['propia']) $host[$c] ??= $i;
+		}
+		$antes = [];
+		foreach ($bloques as $i => $b) {
+			if (!$b['eliminatorias'] && isset($host[$b['propia']])) $antes[$host[$b['propia']]][] = $i;
+		}
+		$movidos = array_merge([], ...array_values($antes));
+		$out = [];
+		foreach ($bloques as $i => $b) {
+			if (in_array($i, $movidos, true)) continue;
+			foreach ($antes[$i] ?? [] as $j) $out[] = ['grupo' => $b['grupo']] + $bloques[$j];
+			$out[] = $b;
+		}
+		return $out;
 	}
 
 	// Un acoplado que tiene medalla en la eliminatoria de otra categoría recibe el pase con esa medalla,

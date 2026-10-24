@@ -35,7 +35,7 @@ composer install --no-dev --optimize-autoloader
 ```sh
 php artisan medallero torneo.ianseo          # reporte en texto
 php artisan medallero torneo.ianseo --json   # todo en JSON
-php artisan medallero:pagina torneo.ianseo  # el guion tal como lo muestra la página (--tandas, --sin-jp-opcional, --html)
+php artisan medallero:pagina torneo.ianseo  # el guion tal como lo muestra la página (--tandas, --solo-tanda=1|2, --sin-anexo, --sin-jp-opcional, --html)
 ```
 
 ## Empaquetar

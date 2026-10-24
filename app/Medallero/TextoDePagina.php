@@ -15,7 +15,8 @@ final class TextoDePagina
 {
 	private const BLOQUES = ['h1', 'h2', 'h3', 'p', 'div', 'li', 'tr', 'section', 'header', 'fieldset', 'ul', 'table'];
 
-	public static function convertir(string $html, bool $dosTandas = false, bool $jpOpcional = true): string
+	// $tanda: en dos tandas, imprimir solo la 1 o la 2 (null = todo). La 1ª tanda nunca lleva anexo.
+	public static function convertir(string $html, bool $dosTandas = false, bool $jpOpcional = true, ?int $tanda = null, bool $anexo = true): string
 	{
 		$doc = new DOMDocument();
 		@$doc->loadHTML('<?xml encoding="utf-8"?>' . $html, LIBXML_NOERROR);
@@ -32,6 +33,8 @@ final class TextoDePagina
 			$ocultar[] = '//*[' . $clase('opcional') . ']//*[' . $clase('medallas') . ']';
 			$ocultar[] = '//*[' . $clase('solo-medallas') . ']';
 		}
+		if ($dosTandas && $tanda) $ocultar[] = '//*[' . $clase('tanda-' . (3 - $tanda)) . ']';
+		if (!$anexo || ($dosTandas && $tanda == 1)) $ocultar[] = '//*[' . $clase('anexo') . ']';
 		foreach ($ocultar as $q) self::quitar($x->query($q));
 		if (!$jpOpcional) {
 			// grupos y tandas que quedaron sin bloques

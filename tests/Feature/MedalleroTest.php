@@ -138,6 +138,31 @@ class MedalleroTest extends TestCase
         $this->assertStringContainsString('[PLATA] [PASE (603)] SUAREZ Pablo León — C. A. Tiro Federal San Justo - de RU15E20', $sin);
     }
 
+    public function test_las_acopladas_se_premian_justo_antes_de_su_eliminatoria(): void
+    {
+        Artisan::call('medallero:pagina', ['archivo' => $this->export('FSJ-1810-FINAL-ORO-PLATA-BRONCE.ianseo')]);
+        $titulos = array_values(array_filter(explode("\n", Artisan::output()), fn ($l) => str_starts_with($l, '### ')));
+        $despues = fn ($t) => $titulos[array_search("### $t", $titulos) + 1];
+        $this->assertSame('### Raso Escuela E20', $despues('Raso AA2 Escuela E20'));
+        $this->assertSame('### Compuesto AA2 Masculino', $despues('Compuesto Masculino Sub-18'));
+        $this->assertSame('### Compuesto Masculino', $despues('Compuesto AA2 Masculino'));
+        $this->assertSame('### JP Recurvo Sub-18 E20', $despues('JP Recurvo Sub-15 E20'));
+    }
+
+    public function test_imprimir_una_sola_tanda(): void
+    {
+        $ruta = $this->export('FSJ-1810-FINAL-ORO-PLATA-BRONCE.ianseo');
+        Artisan::call('medallero:pagina', ['archivo' => $ruta, '--tandas' => true, '--solo-tanda' => 1]);
+        $uno = Artisan::output();
+        $this->assertStringContainsString('1ª tanda', $uno);
+        $this->assertStringNotContainsString('2ª tanda', $uno);
+        $this->assertStringNotContainsString('## Anexo', $uno); // la 1ª tanda nunca lleva anexo
+        Artisan::call('medallero:pagina', ['archivo' => $ruta, '--tandas' => true, '--solo-tanda' => 2, '--sin-anexo' => true]);
+        $dos = Artisan::output();
+        $this->assertStringNotContainsString('1ª tanda', $dos);
+        $this->assertStringNotContainsString('## Anexo', $dos);
+    }
+
     public function test_comando_de_consola(): void
     {
         $this->artisan('medallero', ['archivo' => $this->export('FSJ-1810-FINAL-ORO-PLATA-BRONCE.ianseo')])
