@@ -254,17 +254,26 @@ class MedalleroTest extends TestCase
         $acoplar('RM', 'R', '50M');      // 50+ a Mayores: no previsto
         $acoplar('RU18M', 'R', 'M');     // Mayores a Sub-18: al revés
         $acoplar('RU18E30', 'R', 'U18E50'); // JP de otra distancia
-        $ruta = tempnam(sys_get_temp_dir(), 'acoples');
-        file_put_contents($ruta, gzcompress(serialize($g)));
-        Artisan::call('medallero', ['archivo' => $ruta]);
-        $texto = Artisan::output();
-        unlink($ruta);
+        $acoplar('PI2RU21M', 'R', 'U21M');  // convencional al adaptado: al revés de 18.4.1
+        $correr = function () use (&$g) {
+            $ruta = tempnam(sys_get_temp_dir(), 'acoples');
+            file_put_contents($ruta, gzcompress(serialize($g)));
+            Artisan::call('medallero', ['archivo' => $ruta]);
+            unlink($ruta);
+            return Artisan::output();
+        };
+        $texto = $correr();
+        $this->assertStringContainsString('PI2RU21M: acopla otra división (RU21M (2)) a PI2RU21M', $texto);
         $this->assertStringContainsString('RM: acople no previsto en las normas (R50M (5) a RM). Solo se incluyen en Mayores los Sub-21 de Recurvo', $texto);
         $this->assertStringContainsString('RU18M: acopla Mayores (RM (9)) a RU18M; es al revés', $texto);
         $this->assertStringContainsString('RU18E30: acopla categorías de otra distancia (RU18E50 (1)) a RU18E30; en JP', $texto);
         // los avisos y el armado van en el orden del guion: JP, Escuela y después el resto
         $this->assertLessThan(strpos($texto, 'RU18M: acopla Mayores'), strpos($texto, 'RU18E30: acopla'));
         $this->assertLessThan(strpos($texto, '  Recurvo Masculino (RM) |'), strpos($texto, '  Recurvo Escuela E60 (RE60) |'));
+
+        // la que recibe sin inscriptos también se controla
+        $g['Individuals'] = array_values(array_filter($g['Individuals'], fn($i) => $i['IndEvent'] != 'RM' || !in_array($i['IndId'], array_column(array_filter($g['Entries'], fn($e) => $e['EnDivision'] == 'R' && $e['EnClass'] == 'M'), 'EnId'))));
+        $this->assertStringContainsString('RM: acople no previsto en las normas (R50M (5) a RM)', $correr());
     }
 
     public function test_comando_de_consola(): void

@@ -30,9 +30,6 @@ final class Informe
 		$normas = require $archivoNormas;
 		$t = IanseoExport::leer($archivo);
 		$podios = (new Medallero($t, $normas))->calcular();
-		// en el orden del guion (el anexo y el control del armado se leen igual que la entrega)
-		$orden = fn($p) => Guion::orden($p['propia'] ?? $p['categorias'][0], $t->modalidad == 'sala', $p['tipo'] == 'categoria', $p['nombre']);
-		usort($podios, fn($a, $b) => $orden($a) <=> $orden($b));
 
 		$x = $t->torneo;
 		$torneo = [
@@ -46,12 +43,21 @@ final class Informe
 			$torneo,
 			$normas['version'],
 			array_values(array_filter($podios, fn($p) => $p['estado'] == 'finalizado')),
-			array_values(array_filter($podios, fn($p) => $p['estado'] != 'finalizado')),
+			self::enOrden(array_filter($podios, fn($p) => $p['estado'] != 'finalizado'), $t->modalidad),
 			(new Avisos($t, $normas, $podios, $pases))->calcular(),
 			$pases,
 			$t->sinPuntajes(),
-			$podios,
+			self::enOrden($podios, $t->modalidad),
 		);
+	}
+
+	// Podios en el orden del guion, para el anexo y el control del armado. El medallero queda en el orden de
+	// los eventos: Guion::armar asigna cada pase al primer podio de su categoría en ese orden.
+	public static function enOrden(array $podios, ?string $modalidad): array
+	{
+		$orden = fn($p) => Guion::orden($p['propia'] ?? $p['categorias'][0], $modalidad == 'sala', $p['tipo'] == 'categoria', $p['nombre']);
+		usort($podios, fn($a, $b) => $orden($a) <=> $orden($b));
+		return $podios;
 	}
 
 	public function pasan(): array

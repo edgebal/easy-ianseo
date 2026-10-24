@@ -239,7 +239,7 @@ table.pases tr { break-inside: avoid; }
                 @endif
             @endunless
 
-            @php $avisosPodio = collect($inf->medallero)->flatMap(fn ($p) => array_map(fn ($a) => $p['nombre'] . ': ' . $a, $p['avisos'])); @endphp
+            @php $avisosPodio = collect(App\Medallero\Informe::enOrden($inf->medallero, $inf->torneo['modalidad_codigo']))->flatMap(fn ($p) => array_map(fn ($a) => $p['nombre'] . ': ' . $a, $p['avisos'])); @endphp
             <h3>Avisos de normas y de datos</h3>
             @if ($inf->avisos || $avisosPodio->isNotEmpty())
                 @foreach ($inf->avisos as $tema => $avisos)

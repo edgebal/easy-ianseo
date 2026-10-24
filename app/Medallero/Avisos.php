@@ -186,6 +186,7 @@ final class Avisos
 	// Avisa además si se eligió a mano la categoría que recibe (ninguna coincide con el código del evento).
 	private function acoples(string $codigo, ?string $host, string $receptora, array $cuenta): void
 	{
+		if ($host) $cuenta[$host] ??= 0; // la que recibe cuenta aunque no tenga inscriptos
 		$cats = array_keys($cuenta);
 		if (!$host && count($cats) == 1) {
 			$this->avisar('Armado de eventos', "$codigo: el código del evento no es el de su categoría (" . str_replace('/', '', $cats[0]) . '); conviene usar el código de la categoría.', $receptora);
@@ -202,22 +203,22 @@ final class Avisos
 		$minimo = $this->normas['minimo_eliminatoria'];
 		$juveniles = $this->normas['juveniles_a_mayores'][$this->t->modalidad] ?? [];
 		$alias = $this->normas['alias_division'];
+		// el alias va solo del adaptado acoplado a la convencional que lo recibe, no al revés (18.4.1 / 18.5.1)
 		[$divH, $clH] = explode('/', $receptora);
-		$divH = $alias[$divH] ?? $divH;
 		$distH = $this->distancia($receptora);
 		$sexoH = $this->sexo($clH);
 		$mayores = fn($cl) => in_array($cl, ['M', 'W'], true);
 		$jpH = Medallero::esJP($receptora);
 		$conElim = (int)$this->t->eventos[$codigo]['EvFinalFirstPhase'] > 0;
 
-		$otraDistancia = $otraDivision = $otroSexo = $alReves = $noPrevisto = $alcanzan = [];
+		$otraDistancia = $otraDivision = $otroSexo = $alReves = $noPrevisto = $jpAcopladas = $alcanzan = [];
 		foreach (array_diff($cats, [$receptora]) as $c) {
 			[$div, $cl] = explode('/', $c);
 			$adaptado = isset($alias[$div]);
-			$div = $alias[$div] ?? $div;
+			if ($div != $divH) $div = $alias[$div] ?? $div;
 			$sexo = $this->sexo($cl);
 			$d = $this->distancia($c);
-			$juvenil = preg_match('/^(U18|U21)[MW]$/', $cl, $m) && in_array($m[1], $juveniles[$div] ?? [], true);
+			$juvenil = preg_match('/^(U18|U21)[MW]$/', $cl, $m) && in_array($m[1], $juveniles[$alias[$div] ?? $div] ?? [], true);
 			$jp = Medallero::esJP($c);
 			$motivo = true;
 			if ($div != $divH) $otraDivision[] = $c;
@@ -230,12 +231,16 @@ final class Avisos
 			if ($mayores($clH) && $juvenil) {
 				if ($cuenta[$c] >= $minimo) $alcanzan[] = $c;
 			} elseif ($jpH && $jp) {
-				// da igual cuál de las dos recibe; sobra si las dos llegan a 3
-				if ($conElim && min($cuenta[$c], $cuenta[$receptora] ?? 0) >= $minimo) $alcanzan[] = $c;
+				$jpAcopladas[] = $c;
 			} elseif (!($juvenil && $cuenta[$c] < $minimo)) {
 				// (los juveniles con menos de 3 acoplados a otra cosa que Mayores ya salen en "Mayores y juveniles")
 				$noPrevisto[] = $c;
 			}
+		}
+		// en JP da igual cuál recibe: sobra el acople si junta dos o más categorías que llegan a 3 cada una
+		if ($jpAcopladas && $conElim) {
+			$solas = array_values(array_filter([$receptora, ...$jpAcopladas], fn($c) => $cuenta[$c] >= $minimo));
+			if (count($solas) > 1) $alcanzan = $solas;
 		}
 		$avisar = fn(string $texto) => $this->avisar('Armado de eventos', "$codigo: $texto", $receptora);
 		if ($otraDivision) $avisar('acopla otra división (' . $lista($otraDivision) . ") a $h.");
@@ -248,7 +253,7 @@ final class Avisos
 				. " (art. $art.c); en JP, a la clase de igual distancia (art. 14.3).");
 		}
 		if ($alcanzan) {
-			$avisar('acopla categorías con ' . $minimo . ' o más arqueros (' . $lista($alcanzan) . ") a $h; pueden eliminar solas: "
+			$avisar('junta categorías con ' . $minimo . ' o más arqueros (' . $lista($alcanzan) . ") en $h; pueden eliminar solas: "
 				. ($jpH ? 'en JP se incorporan solo las que no llegan a 3 (art. 14.3).' : "a Mayores se incluyen los que no tienen eliminatoria propia (art. $art.b y c)."));
 		}
 	}
