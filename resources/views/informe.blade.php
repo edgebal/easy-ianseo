@@ -91,14 +91,14 @@ body:has(#modo-dos:checked):has(#imp-1:checked) .anexo,
 body:has(#modo-dos:checked):has(#imp-1:checked) .op-anexo { display: none; }
 /* JP con menos de 3 sin eliminatoria: el art. 14.4 no los premia, algunos clubes sí */
 .bloque .sin-medallas, .pases.todos-con-medalla, .pases li.con-medalla, .pase.solo-sin-opcional { display: none; }
-body:has(#jp-menos-de-3:not(:checked)) .pase.solo-sin-opcional { display: inline-block; }
-body:has(#jp-menos-de-3:not(:checked)) .pases.todos-con-medalla { display: block; }
-body:has(#jp-menos-de-3:not(:checked)) .pases li.con-medalla { display: block; }
-body:has(#jp-menos-de-3:not(:checked)) .bloque.opcional .medallas { display: none; }
-body:has(#jp-menos-de-3:not(:checked)) .bloque.opcional .sin-medallas { display: block; }
-body:has(#jp-menos-de-3:not(:checked)) .bloque.solo-medallas,
-body:has(#jp-menos-de-3:not(:checked)) .grupo:not(:has(.bloque:not(.solo-medallas))),
-body:has(#jp-menos-de-3:not(:checked)) .tanda:not(:has(.bloque:not(.solo-medallas))) { display: none; }
+body:has(#jp-reglas-antiguas:not(:checked)) .pase.solo-sin-opcional { display: inline-block; }
+body:has(#jp-reglas-antiguas:not(:checked)) .pases.todos-con-medalla { display: block; }
+body:has(#jp-reglas-antiguas:not(:checked)) .pases li.con-medalla { display: block; }
+body:has(#jp-reglas-antiguas:not(:checked)) .bloque.opcional .medallas { display: none; }
+body:has(#jp-reglas-antiguas:not(:checked)) .bloque.opcional .sin-medallas { display: block; }
+body:has(#jp-reglas-antiguas:not(:checked)) .bloque.solo-medallas,
+body:has(#jp-reglas-antiguas:not(:checked)) .grupo:not(:has(.bloque:not(.solo-medallas))),
+body:has(#jp-reglas-antiguas:not(:checked)) .tanda:not(:has(.bloque:not(.solo-medallas))) { display: none; }
 .titulo-tanda {
     font-size: 19px; margin: 26px 0 0; padding: 8px 12px;
     border: 2px solid var(--tinta); border-radius: 6px;
@@ -171,7 +171,7 @@ table.pases tr { break-inside: avoid; }
         </div>
         @if ($hayOpcionales)
             <div class="opcion">
-                <label><input type="checkbox" id="jp-menos-de-3" checked> Medallas a JP con menos de 3 arqueros sin eliminatoria (por clasificación, como en Mayores)</label>
+                <label><input type="checkbox" id="jp-reglas-antiguas"> Reglas antiguas de premiación JP: podio por clasificación a las categorías acopladas y a las de menos de 3 sin eliminatoria, como en Mayores (las normas premian solo las eliminatorias, arts. 14.3 y 14.4)</label>
             </div>
         @endif
     </fieldset>

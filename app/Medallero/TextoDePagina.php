@@ -9,14 +9,14 @@ use DOMXPath;
 
 // La página del guion (la misma vista que se imprime) pasada a texto, para revisarla desde la consola.
 // Aplica a mano lo que en el navegador deciden los selectores: una o dos tandas y si se muestran
-// los podios opcionales de JP con menos de 3.
+// los podios opcionales de JP (reglas antiguas de premiación).
 
 final class TextoDePagina
 {
 	private const BLOQUES = ['h1', 'h2', 'h3', 'p', 'div', 'li', 'tr', 'section', 'header', 'fieldset', 'ul', 'table'];
 
 	// $tanda: en dos tandas, imprimir solo la 1 o la 2 (null = todo). La 1ª tanda nunca lleva anexo.
-	public static function convertir(string $html, bool $dosTandas = false, bool $jpOpcional = true, ?int $tanda = null, bool $anexo = true): string
+	public static function convertir(string $html, bool $dosTandas = false, bool $jpReglasAntiguas = false, ?int $tanda = null, bool $anexo = true): string
 	{
 		$doc = new DOMDocument();
 		@$doc->loadHTML('<?xml encoding="utf-8"?>' . $html, LIBXML_NOERROR);
@@ -24,7 +24,7 @@ final class TextoDePagina
 		$clase = fn(string $c) => "contains(concat(' ', normalize-space(@class), ' '), ' $c ')";
 
 		$ocultar = ['//*[' . $clase($dosTandas ? 'modo-una' : 'modo-dos') . ']', '//*[' . $clase('barra') . ']', '//*[' . $clase('selector') . ']'];
-		if ($jpOpcional) {
+		if ($jpReglasAntiguas) {
 			$ocultar[] = '//*[' . $clase('sin-medallas') . ']';
 			$ocultar[] = '//*[' . $clase('todos-con-medalla') . ']';
 			$ocultar[] = '//li[' . $clase('con-medalla') . ']';
@@ -36,7 +36,7 @@ final class TextoDePagina
 		if ($dosTandas && $tanda) $ocultar[] = '//*[' . $clase('tanda-' . (3 - $tanda)) . ']';
 		if (!$anexo || ($dosTandas && $tanda == 1)) $ocultar[] = '//*[' . $clase('anexo') . ']';
 		foreach ($ocultar as $q) self::quitar($x->query($q));
-		if (!$jpOpcional) {
+		if (!$jpReglasAntiguas) {
 			// grupos y tandas que quedaron sin bloques
 			foreach (['grupo', 'tanda'] as $c) {
 				self::quitar($x->query('//*[' . $clase($c) . '][not(.//*[' . $clase('bloque') . '])]'));

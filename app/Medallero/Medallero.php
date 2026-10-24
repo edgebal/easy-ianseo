@@ -11,8 +11,9 @@ namespace App\Medallero;
 // torneo en IANSEO: la anfitriona (EvCode == División.Clase). Solo si ninguna coincide con el código se
 // toma la de 3 o más (o la de más arqueros). Un acople entre pares es uno en el que alguna invitada no es una
 // inclusión reglamentaria (juveniles en Mayores, 13.2.2.c / 15.3.2.c; adaptados en la convencional, 18.5.1).
-// Las categorías acopladas llevan además su podio propio por clasificación. En JP con menos de 3 ese podio
-// queda marcado como opcional: el art. 14.4 solo premia a quienes eliminan, pero hay clubes que lo entregan.
+// Las categorías acopladas llevan además su podio propio por clasificación. En JP ese podio (y el de una
+// categoría con menos de 3 sin eliminatoria) queda marcado como opcional: los arts. 14.3 y 14.4 solo premian
+// las eliminatorias; se entrega únicamente con las reglas antiguas de premiación JP.
 
 final class Medallero
 {
@@ -81,8 +82,9 @@ final class Medallero
 
 		foreach ($podios as &$p) {
 			$p['acoplada_en'] = $p['eliminatorias'] ? [] : array_values(array_unique($huesped[$p['propia']] ?? []));
-			// JP con menos de 3 que no eliminó: el art. 14.4 no lo premia (se entrega o no según el club)
-			$p['opcional'] = !$p['eliminatorias'] && self::esJP($p['propia']) && count($porCategoria[$p['propia']] ?? []) < $minimo;
+			// JP acoplada o con menos de 3 que no eliminó: los arts. 14.3 y 14.4 no la premian por separado
+			$p['opcional'] = !$p['eliminatorias'] && self::esJP($p['propia'])
+				&& ($p['acoplada_en'] || count($porCategoria[$p['propia']] ?? []) < $minimo);
 		}
 		unset($p);
 		return $podios;

@@ -59,7 +59,7 @@ class MedalleroTest extends TestCase
         $this->assertStringContainsString('<h3>JP Raso Sub-15 E20</h3>', $una);
         $this->assertStringContainsString('categoría propia (eliminó acoplada en JP Raso  Sub-18 E20)', $una);
         $this->assertStringNotContainsString('Raso JP-Jóvenes Promesas Sub-18 E20</h3>', $una);
-        $this->assertStringContainsString('id="jp-menos-de-3" checked', $html);
+        $this->assertStringContainsString('<input type="checkbox" id="jp-reglas-antiguas">', $html); // por defecto, las normas
     }
 
     public function test_avisos_de_cuadro_y_walkover(): void
@@ -117,8 +117,13 @@ class MedalleroTest extends TestCase
         $this->assertSame(0, Artisan::call('medallero:pagina', ['archivo' => $this->export('FSJ-1810-FINAL-ORO-PLATA-BRONCE.ianseo')]));
         $texto = Artisan::output();
         $this->assertStringContainsString('[BRONCE] [PASE (595)] SALVA Diego Zenon — Tira Palitos', $texto);
-        $this->assertStringContainsString('[ORO] [PASE (634) - MAESTRO] CASTILLO Josu — Cef 4', $texto);
-        $this->assertStringNotContainsString('Pase de categoría a I20', $texto); // Castillo ya se anuncia con el oro
+        // JP con menos de 3 sin eliminatoria: por las normas no hay medallas y el pase se anuncia solo
+        $this->assertStringContainsString("Pase de categoría a I20\n\n  - [PASE (634) - MAESTRO] CASTILLO Josu — Cef 4", $texto);
+        // con las reglas antiguas recibe el oro y el pase se anuncia con él
+        Artisan::call('medallero:pagina', ['archivo' => $this->export('FSJ-1810-FINAL-ORO-PLATA-BRONCE.ianseo'), '--jp-reglas-antiguas' => true]);
+        $antiguas = Artisan::output();
+        $this->assertStringContainsString('[ORO] [PASE (634) - MAESTRO] CASTILLO Josu — Cef 4', $antiguas);
+        $this->assertStringNotContainsString('Pase de categoría a I20', $antiguas);
     }
 
     public function test_el_pase_se_anuncia_una_sola_vez_y_con_la_medalla(): void
@@ -128,19 +133,21 @@ class MedalleroTest extends TestCase
             Artisan::call('medallero:pagina', ['archivo' => $ruta] + $opciones);
             return explode('## Anexo', Artisan::output())[0];
         };
-        // acoplado Sub-15 con plata en la eliminatoria de Sub-18 y oro en su podio propio opcional
-        $con = $pagina([]);
-        $this->assertStringContainsString('[ORO] [PASE (603)] SUAREZ Pablo León — C. A. Tiro Federal San Justo', $con);
-        $this->assertSame(1, substr_count($con, '[PASE (603)]'));
-        // sin los opcionales, el pase va con la plata y no se lo anuncia aparte
-        $sin = $pagina(['--sin-jp-opcional' => true]);
-        $this->assertSame(1, substr_count($sin, 'SUAREZ Pablo León'));
-        $this->assertStringContainsString('[PLATA] [PASE (603)] SUAREZ Pablo León — C. A. Tiro Federal San Justo - de RU15E20', $sin);
+        // acoplado Sub-15 con plata en la eliminatoria de Sub-18: por las normas solo se premia la eliminatoria,
+        // así que el pase va con la plata y no se lo anuncia aparte
+        $normas = $pagina([]);
+        $this->assertSame(1, substr_count($normas, 'SUAREZ Pablo León'));
+        $this->assertStringContainsString('[PLATA] [PASE (603)] SUAREZ Pablo León — C. A. Tiro Federal San Justo - de RU15E20', $normas);
+        // con las reglas antiguas también tiene oro en su podio propio, y el pase va con ese
+        $antiguas = $pagina(['--jp-reglas-antiguas' => true]);
+        $this->assertStringContainsString('[ORO] [PASE (603)] SUAREZ Pablo León — C. A. Tiro Federal San Justo', $antiguas);
+        $this->assertSame(1, substr_count($antiguas, '[PASE (603)]'));
     }
 
     public function test_las_acopladas_se_premian_justo_antes_de_su_eliminatoria(): void
     {
-        Artisan::call('medallero:pagina', ['archivo' => $this->export('FSJ-1810-FINAL-ORO-PLATA-BRONCE.ianseo')]);
+        // con las reglas antiguas, para que estén también los podios propios de las JP acopladas
+        Artisan::call('medallero:pagina', ['archivo' => $this->export('FSJ-1810-FINAL-ORO-PLATA-BRONCE.ianseo'), '--jp-reglas-antiguas' => true]);
         $titulos = array_values(array_filter(explode("\n", Artisan::output()), fn ($l) => str_starts_with($l, '### ')));
         $despues = fn ($t) => $titulos[array_search("### $t", $titulos) + 1];
         $this->assertSame('### Raso Escuela E20', $despues('Raso AA2 Escuela E20'));

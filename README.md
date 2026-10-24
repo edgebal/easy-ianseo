@@ -2,7 +2,7 @@
 
 Subís el export de un torneo de IANSEO (`.ianseo`) y te arma una página lista para imprimir (Ctrl+P) con:
 
-- **Medallero** de los eventos finalizados: por eliminatorias o por clasificación, según cómo se armó el torneo en IANSEO, incluyendo los acoplamientos: la eliminatoria es el podio de la categoría que recibió a las otras (la de 3 o más) y cada acoplado tiene también podio en su categoría propia. Los podios de JP con menos de 3 sin eliminatoria (art. 14.4) se pueden mostrar u ocultar desde el guion.
+- **Medallero** de los eventos finalizados: por eliminatorias o por clasificación, según cómo se armó el torneo en IANSEO, incluyendo los acoplamientos: la eliminatoria es el podio de la categoría que recibió a las otras (la de 3 o más) y cada acoplado tiene también podio en su categoría propia. En JP se premia solo la eliminatoria (arts. 14.3 y 14.4): las categorías acopladas y las de menos de 3 sin eliminatoria no llevan podio propio, salvo que en el guion se elijan las *reglas antiguas de premiación JP*.
 - **Pendientes**: eventos que todavía no terminaron (no entran al medallero).
 - **Avisos de normas** (en el anexo; las decisiones son del jurado u organizador): eliminatorias con menos de 3, más de 2 byes (asumiendo torneo regular), encuentros perdidos sin tirar (posible abandono), juveniles no incluidos en Mayores, JP sin eliminatoria o sin acoplar, adaptados de salón sin eliminatoria, etc.
 - **Pases de categoría** de Escuela y Jóvenes Promesas (aire libre y salón), con Maestro/Excelencia en JP.
@@ -35,7 +35,7 @@ composer install --no-dev --optimize-autoloader
 ```sh
 php artisan medallero torneo.ianseo          # reporte en texto
 php artisan medallero torneo.ianseo --json   # todo en JSON
-php artisan medallero:pagina torneo.ianseo  # el guion tal como lo muestra la página (--tandas, --solo-tanda=1|2, --sin-anexo, --sin-jp-opcional, --html)
+php artisan medallero:pagina torneo.ianseo  # el guion tal como lo muestra la página (--tandas, --solo-tanda=1|2, --sin-anexo, --jp-reglas-antiguas, --html)
 ```
 
 ## Empaquetar

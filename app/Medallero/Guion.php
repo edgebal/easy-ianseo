@@ -11,7 +11,7 @@ namespace App\Medallero;
 //
 // Los pases de una categoría van en el bloque de su podio propio; si el arquero además tiene
 // medalla en ese podio, no se lo repite en los pases sino que se anota en su línea. En los podios
-// opcionales (JP con menos de 3, que se pueden no entregar) el medallista queda también en la lista de
+// opcionales (JP acopladas o con menos de 3, que solo se entregan con las reglas antiguas) el medallista queda también en la lista de
 // pases, marcado con_medalla: la página lo muestra ahí solo cuando esas medallas no se entregan.
 
 final class Guion
