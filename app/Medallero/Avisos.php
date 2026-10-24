@@ -137,10 +137,13 @@ final class Avisos
 			$conv = $this->normas['alias_division'][$div] ?? null;
 			if (!$conv || Medallero::esJP($cat) || Medallero::esEscuela($cat)) continue;
 			$nombre = $this->t->nombreCategoria($cat) . ' (' . count($ids) . ')';
-			// solo si la convencional tiene arqueros: sin ellos el adaptado queda solo igual
-			$eventosConv = isset($porCat["$conv/$cl"]) ? array_keys(array_filter($this->t->eventoClases, fn($c) => in_array("$conv/$cl", $c, true))) : [];
-			if ($eventosConv && !array_filter($eventosConv, fn($e) => in_array($cat, $this->t->eventoClases[$e], true))) {
-				$this->avisar('Adaptados', "$nombre: no está incluido en la clasificación de " . $this->t->nombreCategoria("$conv/$cl")
+			// también cuando la convencional no tiene arqueros (o ni siquiera evento)
+			$nombreConv = $this->t->nombreCategoria("$conv/$cl") . (isset($porCat["$conv/$cl"]) ? '' : ', sin inscriptos');
+			$eventosConv = array_keys(array_filter($this->t->eventoClases, fn($c) => in_array("$conv/$cl", $c, true)));
+			if (!$eventosConv) {
+				$this->avisar('Adaptados', "$nombre: no hay evento de $nombreConv para incluirlo; los P.I.2 y AA2 tiran también en la convencional (art. $artAd).");
+			} elseif (!array_filter($eventosConv, fn($e) => in_array($cat, $this->t->eventoClases[$e], true))) {
+				$this->avisar('Adaptados', "$nombre: no está incluido en la clasificación de $nombreConv"
 					. ' (' . implode(', ', $eventosConv) . "); los P.I.2 y AA2 tiran también en la convencional (art. $artAd).");
 			}
 			if ($this->t->modalidad == 'sala' && !array_filter($this->podios, fn($p) => $p['eliminatorias'] && $p['propia'] == $cat)) {

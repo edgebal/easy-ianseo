@@ -229,6 +229,8 @@ class MedalleroTest extends TestCase
         $this->assertStringContainsString('BM: 5 inscriptos para un cuadro de 4 (desde semifinal): entran los 4 primeros', $texto);
         $this->assertStringContainsString('JP Raso Sub-18 E20 (BU18E20) | BU18E20 (1) ← BU15E20 (4) | desde semifinales | podio de BU18E20 por eliminatoria', $texto);
         $this->assertStringContainsString("#### Eliminatorias", $texto); // avisos agrupados por tema
+        // el AA2 se avisa aunque la convencional no tenga arqueros
+        $this->assertStringContainsString('Compuesto AA2 Femenino (1): no está incluido en la clasificación de Compuesto Femenino, sin inscriptos (CW)', $texto);
     }
 
     public function test_comando_de_consola(): void
