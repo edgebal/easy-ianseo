@@ -12,7 +12,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // detrás de un proxy HTTPS (tailscale serve, nginx) para que las URLs salgan con https
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // el archivo supera post_max_size de PHP: el POST llega vacío, volvemos al formulario con el motivo
