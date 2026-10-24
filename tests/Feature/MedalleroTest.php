@@ -255,6 +255,7 @@ class MedalleroTest extends TestCase
         $acoplar('RU18M', 'R', 'M');     // Mayores a Sub-18: al revés
         $acoplar('RU18E30', 'R', 'U18E50'); // JP de otra distancia
         $acoplar('PI2RU21M', 'R', 'U21M');  // convencional al adaptado: al revés de 18.4.1
+        $acoplar('BU15E20', 'B', 'U18E20'); // JP hacia la edad más baja
         $correr = function () use (&$g) {
             $ruta = tempnam(sys_get_temp_dir(), 'acoples');
             file_put_contents($ruta, gzcompress(serialize($g)));
@@ -264,6 +265,7 @@ class MedalleroTest extends TestCase
         };
         $texto = $correr();
         $this->assertStringContainsString('PI2RU21M: acopla otra división (RU21M (2)) a PI2RU21M', $texto);
+        $this->assertStringContainsString('BU15E20: acopla clases JP de más edad (BU18E20 (2)) a BU15E20', $texto);
         $this->assertStringContainsString('RM: acople no previsto en las normas (R50M (5) a RM). Solo se incluyen en Mayores los Sub-21 de Recurvo', $texto);
         $this->assertStringContainsString('RU18M: acopla Mayores (RM (9)) a RU18M; es al revés', $texto);
         $this->assertStringContainsString('RU18E30: acopla categorías de otra distancia (RU18E50 (1)) a RU18E30; en JP', $texto);

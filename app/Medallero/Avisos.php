@@ -211,7 +211,7 @@ final class Avisos
 		$jpH = Medallero::esJP($receptora);
 		$conElim = (int)$this->t->eventos[$codigo]['EvFinalFirstPhase'] > 0;
 
-		$otraDistancia = $otraDivision = $otroSexo = $alReves = $noPrevisto = $jpAcopladas = $alcanzan = [];
+		$otraDistancia = $otraDivision = $otroSexo = $alReves = $noPrevisto = $jpAcopladas = $alcanzan = $haciaMenor = [];
 		foreach (array_diff($cats, [$receptora]) as $c) {
 			[$div, $cl] = explode('/', $c);
 			$adaptado = isset($alias[$div]);
@@ -232,6 +232,7 @@ final class Avisos
 				if ($cuenta[$c] >= $minimo) $alcanzan[] = $c;
 			} elseif ($jpH && $jp) {
 				$jpAcopladas[] = $c;
+				if ($this->edadJP($cl) > $this->edadJP($clH)) $haciaMenor[] = $c;
 			} elseif (!($juvenil && $cuenta[$c] < $minimo)) {
 				// (los juveniles con menos de 3 acoplados a otra cosa que Mayores ya salen en "Mayores y juveniles")
 				$noPrevisto[] = $c;
@@ -252,10 +253,19 @@ final class Avisos
 				. ($this->t->modalidad == 'sala' ? 'los Sub-18 y Sub-21 de Recurvo, Compuesto y Raso' : 'los Sub-21 de Recurvo y los Sub-18 y Sub-21 de Compuesto y Raso')
 				. " (art. $art.c); en JP, a la clase de igual distancia (art. 14.3).");
 		}
+		if ($haciaMenor) {
+			$avisar('acopla clases JP de más edad (' . $lista($haciaMenor) . ") a $h; los acoples JP se arman hacia la clase etaria más alta (no es de las normas: es lo habitual).");
+		}
 		if ($alcanzan) {
 			$avisar('junta categorías con ' . $minimo . ' o más arqueros (' . $lista($alcanzan) . ") en $h; pueden eliminar solas: "
 				. ($jpH ? 'en JP se incorporan solo las que no llegan a 3 (art. 14.3).' : "a Mayores se incluyen los que no tienen eliminatoria propia (art. $art.b y c)."));
 		}
+	}
+
+	// edad de una clase JP (U13I15 → 13), o 0
+	private function edadJP(string $clase): int
+	{
+		return preg_match('/^U(1[358])/', $clase, $m) ? (int)$m[1] : 0;
 	}
 
 	// sexo de una clase según IANSEO (ClSex 0 masculino, 1 femenino; -1 o sin dato: mixta), o null si es mixta
