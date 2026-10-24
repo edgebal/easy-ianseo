@@ -46,12 +46,14 @@ final class Guion
 				$medallas[] = $a + ['pase' => $pase, 'otra_categoria' => $otraCat];
 			}
 			$bloques[] = self::bloque($p['anfitriona'], $p['nombre'], self::subtitulo($p), $medallas,
-				array_values(array_filter($pases, fn($x) => !in_array($x['id'], $enPodio, true))), $p['tipo'] == 'categoria', $sala);
+				array_values(array_filter($pases, fn($x) => !in_array($x['id'], $enPodio, true))), $p['tipo'] == 'categoria', $sala)
+				+ ['eliminatorias' => $p['eliminatorias'], 'categorias' => $p['categorias']];
 		}
 
 		// categorías con pases pero sin podio terminado (p. ej. eliminatoria pendiente)
 		foreach ($pasesPorCat as $cat => $pases) {
-			$bloques[] = self::bloque($cat, $pases[0]['nombre_categoria'], 'podio pendiente', [], $pases, true, $sala);
+			$bloques[] = self::bloque($cat, $pases[0]['nombre_categoria'], 'podio pendiente', [], $pases, true, $sala)
+				+ ['eliminatorias' => false, 'categorias' => [$cat]];
 		}
 
 		usort($bloques, fn($a, $b) => $a['orden'] <=> $b['orden']);
@@ -59,6 +61,26 @@ final class Guion
 		$grupos = [];
 		foreach ($bloques as $b) $grupos[$b['grupo']][] = $b;
 		return $grupos;
+	}
+
+	// Entrega en dos tandas: [1 => grupos sin eliminatorias, 2 => grupos con eliminatorias].
+	// Se decide por categoría: si una categoría forma parte de alguna eliminatoria (propia o acoplada,
+	// terminada o pendiente), todos sus bloques van a la 2ª tanda, para que reciba todo junto.
+	public static function tandas(Informe $inf): array
+	{
+		$eliminan = [];
+		foreach (array_merge($inf->medallero, $inf->pendientes) as $p) {
+			if ($p['eliminatorias']) foreach ($p['categorias'] as $c) $eliminan[$c] = true;
+		}
+
+		$tandas = [1 => [], 2 => []];
+		foreach (self::armar($inf) as $g => $bloques) {
+			foreach ($bloques as $b) {
+				$segunda = $b['eliminatorias'] || array_filter($b['categorias'], fn($c) => isset($eliminan[$c]));
+				$tandas[$segunda ? 2 : 1][$g][] = $b;
+			}
+		}
+		return array_filter($tandas);
 	}
 
 	private static function bloque(string $cat, string $nombre, ?string $subtitulo, array $medallas, array $pases, bool $propio, bool $sala): array

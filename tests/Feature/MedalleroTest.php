@@ -53,6 +53,24 @@ class MedalleroTest extends TestCase
             ->assertSeeInOrder(['JP Raso Sub-15 E20', 'JP Raso  Sub-18 E20', 'eliminatoria acoplada con', 'Raso JP-Jóvenes Promesas Sub-18 E20', 'categoría propia']);
     }
 
+    public function test_dos_tandas_por_categoria_con_las_acopladas_en_la_segunda(): void
+    {
+        $respuesta = $this->subir($this->export('FSJ-1810-FINAL-ORO-PLATA-BRONCE.ianseo'))->assertOk();
+        $html = $respuesta->getContent();
+        $dos = substr($html, strpos($html, 'class="modo-dos"'));
+        $primera = substr($dos, 0, strpos($dos, '2ª tanda'));
+        $segunda = substr($dos, strpos($dos, '2ª tanda'));
+
+        // sin eliminatorias y sin acople: primera tanda
+        $this->assertStringContainsString('Longbow Masculino', $primera);
+        $this->assertStringContainsString('Compuesto AA2 Femenino', $primera);
+        // con eliminatoria propia o acoplada a una (aunque su podio propio sea por clasificación): segunda
+        foreach (['Compuesto Masculino Sub-18', 'Compuesto AA2 Masculino', 'JP Raso Sub-15 E20', 'Raso Escuela E20', 'P.I.2 Recurvo Escuela E40'] as $cat) {
+            $this->assertStringNotContainsString($cat, $primera, "$cat no debería estar en la 1ª tanda");
+            $this->assertStringContainsString($cat, $segunda);
+        }
+    }
+
     public function test_salon_avisa_acople_a_sub21_en_vez_de_mayores(): void
     {
         $this->subir($this->export('Indoor.ianseo'))

@@ -6,8 +6,9 @@
     $fecha = fn ($d) => \Illuminate\Support\Carbon::parse($d)->format('d/m/Y');
     $t = $inf->torneo;
     $fechas = $fecha($t['desde']) . ($t['hasta'] != $t['desde'] ? ' al ' . $fecha($t['hasta']) : '');
-    $clases = [1 => 'oro', 2 => 'plata', 3 => 'bronce'];
     $grupos = Guion::armar($inf);
+    $tandas = Guion::tandas($inf);
+    $tituloTanda = [1 => '1ª tanda — categorías sin eliminatorias', 2 => '2ª tanda — categorías con eliminatorias (propias o acopladas)'];
 @endphp
 
 @section('titulo', 'Entrega de premios — ' . $t['nombre'])
@@ -59,6 +60,23 @@
 .medalla.plata { background: var(--plata); }
 .medalla.bronce { background: var(--bronce); }
 
+.selector {
+    border: 1px solid var(--linea); border-radius: 8px; background: var(--papel);
+    max-width: 820px; margin: 0 auto 16px; padding: 10px 16px;
+    display: flex; flex-wrap: wrap; gap: 6px 22px; align-items: center;
+}
+.selector legend { float: left; font-weight: 600; padding: 0; margin-right: 6px; }
+.selector label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+/* el selector elige qué versión del guion se ve (y se imprime) */
+.modo-dos { display: none; }
+body:has(#modo-dos:checked) .modo-una { display: none; }
+body:has(#modo-dos:checked) .modo-dos { display: block; }
+.titulo-tanda {
+    font-size: 19px; margin: 26px 0 0; padding: 8px 12px;
+    border: 2px solid var(--tinta); border-radius: 6px;
+}
+.tanda + .tanda { break-before: page; }
+
 .anexo { break-before: page; }
 .anexo > h2 {
     font-size: 15px; text-transform: uppercase; letter-spacing: .08em;
@@ -84,7 +102,7 @@ table.pases tr { break-inside: avoid; }
     @page { size: A4; margin: 14mm; }
     body { background: #fff; font-size: 12pt; }
     .contenedor { max-width: none; padding: 0; }
-    .barra { display: none; }
+    .barra, .selector { display: none; }
     .hoja { border: 0; padding: 0; border-radius: 0; max-width: none; }
     .tabla-scroll { overflow: visible; }
     .grupo > h2 { break-after: avoid; }
@@ -104,6 +122,11 @@ table.pases tr { break-inside: avoid; }
         <span class="archivo">{{ $archivo }}</span>
         <button class="boton" type="button" onclick="window.print()">Imprimir</button>
     </div>
+    <fieldset class="selector">
+        <legend>Entrega</legend>
+        <label><input type="radio" name="modo" id="modo-una" checked> Una tanda</label>
+        <label><input type="radio" name="modo" id="modo-dos"> Dos tandas (primero sin eliminatorias, después con eliminatorias)</label>
+    </fieldset>
 
     <article class="hoja">
         <header class="encabezado">
@@ -120,44 +143,18 @@ table.pases tr { break-inside: avoid; }
             <p>No hay podios finalizados ni pases de categoría.</p>
         @endif
 
-        @foreach ($grupos as $g => $bloques)
-            <section class="grupo">
-                <h2>{{ Guion::GRUPOS[$g] }}</h2>
-                @foreach ($bloques as $b)
-                    <div class="bloque">
-                        <h3>{{ $b['nombre'] }}</h3>
-                        @if ($b['subtitulo'])<div class="sub">{{ $b['subtitulo'] }}</div>@endif
+        <div class="modo-una">
+            @include('partials.grupos', ['grupos' => $grupos])
+        </div>
 
-                        @if ($b['pases'])
-                            <div class="titulo-pases">Pases de categoría ({{ str_starts_with($b['destino'], 'sin ') ? $b['destino'] : 'a ' . $b['destino'] }}):</div>
-                            <ul>
-                                @foreach ($b['pases'] as $x)
-                                    <li>{{ $x['nombre'] }} <span class="club">{{ $x['club'] }}</span>@if (!empty($x['logro'])) <span class="anota">({{ $x['logro'] }})</span>@endif</li>
-                                @endforeach
-                            </ul>
-                        @endif
-
-                        @if ($b['medallas'])
-                            <ul class="medallas">
-                                @foreach ($b['medallas'] as $a)
-                                    <li>
-                                        <span class="medalla {{ $clases[$a['puesto']] ?? '' }}">{{ Informe::MEDALLAS[$a['puesto']] ?? $a['puesto'] . 'º' }}</span>
-                                        <span>
-                                            <span class="nombre">{{ $a['nombre'] }}</span>
-                                            @if ($a['otra_categoria'])<span class="anota">({{ $a['otra_categoria'] }})</span>@endif
-                                            <span class="club">{{ $a['club'] }}</span>
-                                            @if ($a['pase'])
-                                                <span class="anota">(y pase de categoría{{ !empty($a['pase']['logro']) ? ' — ' . $a['pase']['logro'] : '' }})</span>
-                                            @endif
-                                        </span>
-                                    </li>
-                                @endforeach
-                            </ul>
-                        @endif
-                    </div>
-                @endforeach
-            </section>
-        @endforeach
+        <div class="modo-dos">
+            @foreach ($tandas as $n => $gruposTanda)
+                <section class="tanda">
+                    <h2 class="titulo-tanda">{{ $tituloTanda[$n] }}</h2>
+                    @include('partials.grupos', ['grupos' => $gruposTanda])
+                </section>
+            @endforeach
+        </div>
 
         <section class="anexo">
             <h2>Anexo</h2>
