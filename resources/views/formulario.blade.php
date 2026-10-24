@@ -21,10 +21,6 @@ input[type=file] {
     background: var(--fondo);
     font: inherit;
 }
-fieldset { border: 0; padding: 0; margin: 0 0 22px; }
-legend { font-weight: 600; margin-bottom: 6px; }
-.opcion { display: flex; gap: 8px; align-items: flex-start; margin: 6px 0; }
-.opcion input { margin-top: 4px; }
 .pie { color: var(--suave); font-size: 13px; margin-top: 18px; }
 @endsection
 
@@ -33,7 +29,7 @@ legend { font-weight: 600; margin-bottom: 6px; }
     <form class="tarjeta" method="POST" action="{{ route('informe') }}" enctype="multipart/form-data">
         @csrf
         <h1>Medallero FATARCO</h1>
-        <p>Subí el export del torneo (<b>Torneo → Exportar</b> en IANSEO) y se arma el medallero listo para imprimir.</p>
+        <p>Subí el export del torneo (<b>Torneo → Exportar</b> en IANSEO) y se arma el guion de la entrega de premios, listo para imprimir.</p>
 
         @error('archivo')
             <div class="error" role="alert">{{ $message }}</div>
@@ -43,13 +39,6 @@ legend { font-weight: 600; margin-bottom: 6px; }
             <label class="titulo" for="archivo">Archivo .ianseo</label>
             <input id="archivo" name="archivo" type="file" accept=".ianseo" required>
         </div>
-
-        <fieldset>
-            <legend>Incluir en el imprimible</legend>
-            <label class="opcion"><input type="checkbox" name="avisos" value="1" checked> Avisos de normas (acoplamientos, eliminatorias)</label>
-            <label class="opcion"><input type="checkbox" name="pases" value="1" checked> Pases de categoría (Escuela y Jóvenes Promesas)</label>
-            <label class="opcion"><input type="checkbox" name="no_pasan" value="1"> También los que no alcanzan el pase</label>
-        </fieldset>
 
         <button class="boton" type="submit">Generar imprimible</button>
 

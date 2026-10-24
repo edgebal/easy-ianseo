@@ -25,15 +25,18 @@ final class Medallero
 			if (!$ids) continue;
 			$categorias = array_values(array_unique(array_map([$this->t, 'categoria'], $ids)));
 			sort($categorias);
-			if (count($categorias) == 1) {
-				$cubiertas[$categorias[0]] = true;
-			} else {
-				foreach ($categorias as $host) {
-					if (str_replace('/', '', $host) != $codigo) continue;
-					$invitadas = array_diff($categorias, [$host]);
-					if (!array_filter($invitadas, fn($c) => !$this->esInclusion($c, $host))) $cubiertas[$host] = true;
-				}
+			$anfitriona = null; // categoría cuyo código coincide con el del evento
+			foreach ($this->t->eventoClases[$codigo] ?? $categorias as $c) {
+				if (str_replace('/', '', $c) == $codigo) $anfitriona = $c;
 			}
+			$propia = null;     // categoría para la que este es su podio (null en acoples entre pares)
+			if (count($categorias) == 1) {
+				$propia = $categorias[0];
+			} elseif ($anfitriona && in_array($anfitriona, $categorias, true)) {
+				$invitadas = array_diff($categorias, [$anfitriona]);
+				if (!array_filter($invitadas, fn($c) => !$this->esInclusion($c, $anfitriona))) $propia = $anfitriona;
+			}
+			if ($propia) $cubiertas[$propia] = true;
 			$podio = (int)$ev['EvFinalFirstPhase'] > 0
 				? $this->porEliminatoria($codigo, $ids)
 				: $this->porClasificacion($ids, fn($id) => (int)$this->t->individuales[$codigo][$id]['IndRank']);
@@ -42,6 +45,9 @@ final class Medallero
 				'codigo' => $codigo,
 				'nombre' => trim($ev['EvEventName']),
 				'categorias' => $categorias,
+				'nombres_categorias' => array_combine($categorias, array_map([$this->t, 'nombreCategoria'], $categorias)),
+				'propia' => $propia,
+				'anfitriona' => $anfitriona ?? $categorias[0],
 				'participantes' => count($ids),
 				'eliminatorias' => (int)$ev['EvFinalFirstPhase'] > 0,
 			] + $podio;
@@ -54,6 +60,9 @@ final class Medallero
 				'codigo' => str_replace('/', '', $cat),
 				'nombre' => $this->t->nombreCategoria($cat),
 				'categorias' => [$cat],
+				'nombres_categorias' => [$cat => $this->t->nombreCategoria($cat)],
+				'propia' => $cat,
+				'anfitriona' => $cat,
 				'participantes' => count($ids),
 				'eliminatorias' => false,
 			] + $this->porClasificacion($ids, fn($id) => (int)$this->t->quali[$id]['QuClRank']);

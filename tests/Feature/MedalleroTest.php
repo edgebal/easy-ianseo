@@ -30,33 +30,35 @@ class MedalleroTest extends TestCase
         $this->get('/')->assertOk()->assertSee('Archivo .ianseo')->assertSee('Generar imprimible');
     }
 
-    public function test_aire_libre_con_acoplamientos_y_pases(): void
+    public function test_guion_de_entrega_aire_libre(): void
     {
-        $this->subir($this->export('FSJ-1810-FINAL-ORO-PLATA-BRONCE.ianseo'), ['avisos' => 1, 'pases' => 1])
+        $this->subir($this->export('FSJ-1810-FINAL-ORO-PLATA-BRONCE.ianseo'))
             ->assertOk()
             ->assertSee('Final Provincial FETARCO')
-            ->assertSee('acopla C/M + C/U18M + CAA2/M')
-            ->assertSeeInOrder(['Compuesto Masculino', 'Gabas Sebastian', 'Della Penna Carlos', 'Amarillo Matías'])
-            ->assertSee('falta definir la final')                  // RE40 pendiente
-            ->assertSee('eliminatoria con 2 participante(s)')      // aviso 13.2.2.b
-            ->assertSeeInOrder(['Pases de categoría', 'Salva Diego Zenon', 'E30']);
+            // grupos en el orden de la ceremonia
+            ->assertSeeInOrder(['Jóvenes Promesas', 'Escuela', 'Sub, 50+ y Mayores', 'Anexo'])
+            // bloque: pases primero, después Bronce, Plata, Oro; el medallista que pasa se anota
+            ->assertSeeInOrder(['Raso Escuela E20', 'Pases de categoría (a E30)', 'Muller Marcos',
+                'Bronce', 'Salva Diego Zenon', 'y pase de categoría', 'Plata', 'Ferreccio', 'Oro', 'García Alejandra'])
+            // por arco dentro de Mayores: Longbow, Raso, Compuesto, Recurvo
+            ->assertSeeInOrder(['Sub, 50+ y Mayores', 'Longbow Masculino', 'Raso Masculino', 'Compuesto Masculino', 'Recurvo Masculino'])
+            // anexo
+            ->assertSeeInOrder(['Anexo', 'falta definir la final', 'eliminatoria con 2 participante(s)', 'No alcanzan el pase']);
+    }
+
+    public function test_acople_entre_pares_tiene_bloque_propio_para_cada_categoria(): void
+    {
+        $this->subir($this->export('FSJ-1810-FINAL-ORO-PLATA-BRONCE.ianseo'))
+            ->assertOk()
+            ->assertSeeInOrder(['JP Raso Sub-15 E20', 'JP Raso  Sub-18 E20', 'eliminatoria acoplada con', 'Raso JP-Jóvenes Promesas Sub-18 E20', 'categoría propia']);
     }
 
     public function test_salon_avisa_acople_a_sub21_en_vez_de_mayores(): void
     {
-        $this->subir($this->export('Indoor.ianseo'), ['avisos' => 1])
+        $this->subir($this->export('Indoor.ianseo'))
             ->assertOk()
             ->assertSee('Salón')
             ->assertSee('acoplado a RU21M en lugar de la clasificación de Mayores R/M');
-    }
-
-    public function test_secciones_opcionales_se_pueden_sacar(): void
-    {
-        $this->subir($this->export('ADASJ263_FATARCO.ianseo'))
-            ->assertOk()
-            ->assertSee('Medallero')
-            ->assertDontSee('Pases de categoría')
-            ->assertDontSee('Avisos de normas');
     }
 
     public function test_archivo_que_no_es_ianseo_vuelve_con_error(): void

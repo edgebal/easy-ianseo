@@ -34,6 +34,7 @@ final class Informe
 			'codigo' => $x['ToCode'], 'nombre' => trim($x['ToName']), 'lugar' => trim($x['ToWhere']),
 			'desde' => $x['ToWhenFrom'], 'hasta' => $x['ToWhenTo'],
 			'tipo' => $x['ToTypeName'], 'modalidad' => ['aire' => 'Aire Libre', 'sala' => 'Salón'][$t->modalidad] ?? null,
+			'modalidad_codigo' => $t->modalidad,
 		];
 		return new self(
 			$torneo,

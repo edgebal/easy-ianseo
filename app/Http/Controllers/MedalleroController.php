@@ -34,11 +34,6 @@ class MedalleroController extends Controller
         return view('informe', [
             'inf' => $informe,
             'archivo' => $request->file('archivo')->getClientOriginalName(),
-            'incluir' => [
-                'avisos' => $request->boolean('avisos'),
-                'pases' => $request->boolean('pases'),
-                'no_pasan' => $request->boolean('no_pasan'),
-            ],
         ]);
     }
 }
