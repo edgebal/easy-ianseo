@@ -49,7 +49,7 @@ final class Avisos
 			if ($conElim) {
 				foreach ($cats as $c) $elimDe[$c][] = $codigo;
 				if ($n < $minimo) $this->avisar('Eliminatorias', "$codigo: eliminatoria con $n participante(s); el mínimo es $minimo (art. $art.b).");
-				$this->cuadro($codigo, (int)$ev['EvFinalFirstPhase'], $n, $art);
+				$this->cuadro($codigo, $ev, $n, $art);
 			}
 
 			// eliminatoria obligatoria desde semis en R/C/B Mayores. El evento es "de Mayores" por su
@@ -163,8 +163,11 @@ final class Avisos
 	// o divisiones distintas (fuera de los adaptados que tiran en la convencional).
 	private function acoples(string $codigo, ?string $host, array $cuenta): void
 	{
-		if (count($cuenta) < 2) return;
 		$cats = array_keys($cuenta);
+		if (!$host && count($cats) == 1) {
+			$this->avisar('Armado de eventos', "$codigo: el código del evento no es el de su categoría (" . str_replace('/', '', $cats[0]) . '); conviene usar el código de la categoría.');
+		}
+		if (count($cats) < 2) return;
 		$lista = fn(array $cs) => implode(', ', array_map(fn($c) => str_replace('/', '', $c) . " ({$cuenta[$c]})", $cs));
 		if (!$host) {
 			$receptora = current(array_filter($this->podios, fn($p) => $p['tipo'] == 'evento' && $p['codigo'] == $codigo))['propia'] ?? $cats[0];
@@ -201,10 +204,10 @@ final class Avisos
 
 	// Byes de la primera fase y encuentros ganados por ausencia del rival. Se asume torneo regular:
 	// desde semifinales, y si se arranca antes, con un máximo de dos byes (art. 13.2.2.a / 15.3.2.a).
-	private function cuadro(string $codigo, int $fase, int $inscriptos, string $art): void
+	private function cuadro(string $codigo, array $ev, int $inscriptos, string $art): void
 	{
 		$f = $this->t->finales[$codigo] ?? [];
-		$fase = 2 ** (int)ceil(log(max($fase, 1), 2)); // 24/48 de IANSEO: la llave de 32/64
+		$fase = 2 ** (int)ceil(log(max((int)$ev['EvFinalFirstPhase'], 1), 2)); // 24/48 de IANSEO: la llave de 32/64
 		$lugares = 2 * $fase;
 		// bye: encuentro de la primera fase con un solo arquero (los vacíos de los dos lados no cuentan)
 		$byes = 0;
@@ -215,14 +218,20 @@ final class Avisos
 			$armado = $armado || $a || $b;
 			if ($a != $b) $byes++;
 		}
-		// cuadro todavía sin armar (antes de terminar la clasificación): los byes que va a haber con los inscriptos
-		if (!$armado) $byes = max(0, $lugares - $inscriptos);
+		// cuadro todavía sin armar (antes de terminar la clasificación): lo que va a pasar con los inscriptos. Entran los
+		// que fija el evento (EvNumQualified desde el puesto EvFirstQualified) o los lugares del cuadro; con la siembra
+		// 1 contra el último, 2 contra el anteúltimo..., los byes son los cruces con un solo arquero
+		$desde = max(1, (int)$ev['EvFirstQualified']);
+		$disponibles = max(0, $inscriptos - $desde + 1);
+		$entran = min((int)$ev['EvNumQualified'] ?: $lugares, $lugares, $disponibles);
+		if (!$armado) $byes = min($entran, $lugares - $entran);
 		if ($fase > 2 && $byes > 2) {
-			$this->avisar('Eliminatorias', "$codigo: la eliminatoria arranca en " . self::fase($lugares) . ' con ' . ($armado ? "$byes byes" : "$inscriptos inscriptos ($byes byes)")
+			$this->avisar('Eliminatorias', "$codigo: la eliminatoria arranca en " . self::fase($lugares) . ' con ' . ($armado ? "$byes byes" : "$entran clasificados ($byes byes)")
 				. "; en torneos regulares se puede empezar antes de semifinales con un máximo de 2 byes (art. $art.a).");
 		}
-		if (!$armado && $inscriptos > $lugares) {
-			$this->avisar('Eliminatorias', "$codigo: $inscriptos inscriptos para una eliminatoria desde " . self::fase($lugares) . ": entran los $lugares primeros de la clasificación.");
+		if (!$armado && $disponibles > $entran) {
+			$this->avisar('Eliminatorias', "$codigo: $inscriptos inscriptos para un cuadro de $lugares (desde " . self::fase($lugares) . '): entran '
+				. ($desde > 1 ? "$entran desde el puesto $desde" : "los $entran primeros") . ' de la clasificación.');
 		}
 
 		// rival presente pero el otro ganó por bye, sin IRM ni flechas cargadas: no se presentó. Sin causa justificada

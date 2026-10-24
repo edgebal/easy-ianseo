@@ -38,8 +38,10 @@ final class TextoDePagina
 				$ocultar[] = $bloque . '[' . $clase('solo-medallas') . ']';
 			}
 		}
+		// antes de empezar la página no tiene selector: el control del armado se ve siempre
+		$previo = $x->query('//*[' . $clase('previo') . ']')->length > 0;
 		if ($dosTandas && $tanda) $ocultar[] = '//*[' . $clase('tanda-' . (3 - $tanda)) . ']';
-		if (!$anexo || ($dosTandas && $tanda == 1)) $ocultar[] = '//*[' . $clase('anexo') . ']';
+		if (!$previo && (!$anexo || ($dosTandas && $tanda == 1))) $ocultar[] = '//*[' . $clase('anexo') . ']';
 		foreach ($ocultar as $q) self::quitar($x->query($q));
 		// grupos y tandas que quedaron sin bloques
 		foreach (['grupo', 'tanda'] as $c) {

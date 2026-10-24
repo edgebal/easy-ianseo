@@ -215,6 +215,9 @@ class MedalleroTest extends TestCase
 
         Artisan::call('medallero:pagina', ['archivo' => $ruta]);
         $texto = Artisan::output();
+        // las opciones de impresión no aplican: la página previa no tiene selector
+        Artisan::call('medallero:pagina', ['archivo' => $ruta, '--sin-anexo' => true, '--tandas' => true, '--solo-tanda' => 1]);
+        $this->assertSame($texto, Artisan::output());
         unlink($ruta);
         $this->assertStringContainsString('Control previo al torneo', $texto);
         $this->assertStringContainsString('## Control del armado', $texto);
@@ -222,8 +225,8 @@ class MedalleroTest extends TestCase
         $this->assertStringNotContainsString('clasificación incompleta', $texto);
         $this->assertStringNotContainsString('No alcanzan el pase', $texto);
         // byes y cortes calculados con los inscriptos, y el armado de cada evento
-        $this->assertStringContainsString('BE30: la eliminatoria arranca en cuartos con 5 inscriptos (3 byes)', $texto);
-        $this->assertStringContainsString('BM: 5 inscriptos para una eliminatoria desde semifinal: entran los 4 primeros', $texto);
+        $this->assertStringContainsString('BE30: la eliminatoria arranca en cuartos con 5 clasificados (3 byes)', $texto);
+        $this->assertStringContainsString('BM: 5 inscriptos para un cuadro de 4 (desde semifinal): entran los 4 primeros', $texto);
         $this->assertStringContainsString('JP Raso Sub-18 E20 (BU18E20) | BU18E20 (1) ← BU15E20 (4) | desde semifinales | podio de BU18E20 por eliminatoria', $texto);
         $this->assertStringContainsString("#### Eliminatorias", $texto); // avisos agrupados por tema
     }
