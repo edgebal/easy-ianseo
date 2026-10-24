@@ -52,13 +52,13 @@ final class Guion
 				? array_map(fn($x) => $x + ['con_medalla' => $conMedalla($x)], $pases)
 				: array_values(array_filter($pases, fn($x) => !$conMedalla($x)));
 			$bloques[] = self::bloque($cat, $p['nombre'], self::subtitulo($p), $medallas, $sinRepetir, $p['tipo'] == 'categoria', $sala)
-				+ ['eliminatorias' => $p['eliminatorias'], 'categorias' => $p['categorias'], 'opcional' => $p['opcional']];
+				+ ['eliminatorias' => $p['eliminatorias'], 'categorias' => $p['categorias'], 'opcional' => $p['opcional'], 'acoplada' => (bool)$p['acoplada_en']];
 		}
 
 		// categorías con pases pero sin podio terminado (p. ej. eliminatoria pendiente)
 		foreach ($pasesPorCat as $cat => $pases) {
 			$bloques[] = self::bloque($cat, $pases[0]['nombre_categoria'], 'podio pendiente', [], $pases, true, $sala)
-				+ ['eliminatorias' => false, 'categorias' => [$cat], 'opcional' => false];
+				+ ['eliminatorias' => false, 'categorias' => [$cat], 'opcional' => false, 'acoplada' => false];
 		}
 
 		usort($bloques, fn($a, $b) => $a['orden'] <=> $b['orden']);

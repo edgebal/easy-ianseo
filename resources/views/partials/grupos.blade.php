@@ -12,7 +12,7 @@
             <div @class(['bloque', 'opcional' => $b['opcional'], 'solo-medallas' => $b['opcional'] && !$b['pases']])>
                 <h3>{{ $b['nombre'] }}</h3>
                 @if ($b['subtitulo'])<div class="sub">{{ $b['subtitulo'] }}</div>@endif
-                @if ($b['opcional'])<div class="sub sin-medallas">sin medallas: menos de 3 arqueros y sin eliminatoria (art. 14.4)</div>@endif
+                @if ($b['opcional'])<div class="sub sin-medallas">{{ $b['acoplada'] ? 'no se entrega el podio propio por clasificación: menos de 3 arqueros (art. 14.4)' : 'sin medallas: menos de 3 arqueros y sin eliminatoria (art. 14.4)' }}</div>@endif
 
                 @if ($b['pases'])
                     {{-- con_medalla: en podios opcionales, el medallista se anuncia con la medalla; acá solo si no se entregan --}}
