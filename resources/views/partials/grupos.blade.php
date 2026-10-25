@@ -10,9 +10,7 @@
             <div @class(['bloque', 'opcional-' . $b['opcional'] => $b['opcional'], 'solo-medallas' => $b['opcional'] && !$b['pases']])>
                 <h3>{{ $b['nombre'] }}</h3>
                 @if ($b['subtitulo'])<div class="sub">{{ $b['subtitulo'] }}</div>@endif
-                @if ($b['opcional'])<div class="sub sin-medallas">{{ $b['opcional'] == 'jp' && $b['acoplada']
-                    ? 'sin podio propio: en JP las categorías acopladas se premian solo en la eliminatoria (arts. 14.3 y 14.4)'
-                    : Guion::OPCIONALES[$b['opcional']]['nota'] }}</div>@endif
+                @if ($b['opcional'])<div class="sub sin-medallas">{{ Guion::OPCIONALES[$b['opcional']]['nota'] }}</div>@endif
 
                 @if ($b['pases'])
                     {{-- con_medalla: en podios opcionales, el medallista se anuncia con la medalla; acá solo si no se entregan --}}

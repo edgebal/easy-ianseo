@@ -96,7 +96,7 @@ final class Informe
 	}
 
 	public const OPCIONAL = [
-		'jp' => 'solo con reglas antiguas de premiación JP (arts. 14.3 y 14.4)',
+		'jp' => 'solo con reglas antiguas de premiación JP: en JP no hay doble medalla (arts. 14.3 y 14.4)',
 		'escuela' => 'Escuela con 2 o menos: podio no obligatorio (art. 11.2)',
 		'adaptados' => 'adaptado de salón sin eliminatoria propia: solo con la opción de podio (art. 18.5.1)',
 	];

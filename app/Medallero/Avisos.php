@@ -119,8 +119,9 @@ final class Avisos
 			}
 		}
 
-		// Jóvenes Promesas: se premia por eliminatorias (art. 14.4); con menos de 3 se acoplan a otra clase
-		// etaria de igual distancia (art. 14.3). A veces no se elimina a propósito por falta de espacio: solo avisos.
+		// Jóvenes Promesas: con menos de 3 se acoplan a otra clase etaria de igual distancia para eliminar (art. 14.3),
+		// y se premia solo la eliminatoria. Las que no eliminan (a veces a propósito, por falta de espacio) se premian
+		// por clasificación: se avisa solo cuando podrían haber eliminado.
 		$jpElim = [];
 		$jpDistancia = [];
 		foreach ($porCat as $cat => $ids) {
@@ -133,16 +134,14 @@ final class Avisos
 			if (!$k || !empty($elimDe[$cat])) continue;
 			$n = count($ids);
 			$nombre = $this->t->nombreCategoria($cat);
-			$sin = 'sin medallas, salvo con las reglas antiguas de premiación JP';
+			$sin = 'se premia por clasificación';
 			if ($n >= $minimo) {
-				$this->avisar('Jóvenes Promesas', "$nombre ($n): sin eliminatoria; en Jóvenes Promesas se premia solo por eliminatorias (art. 14.4): $sin.", $cat);
+				$this->avisar('Jóvenes Promesas', "$nombre ($n): sin eliminatoria (art. 14.3): $sin.", $cat);
 			} elseif (!empty($jpElim[$k])) {
 				$this->avisar('Jóvenes Promesas', "$nombre ($n): hubo eliminatoria JP de la misma distancia y esta categoría no se acopló (art. 14.3): $sin.", $cat);
 			} elseif (count($jpDistancia[$k]) > 1) {
 				$otras = array_map([$this->t, 'nombreCategoria'], array_diff($jpDistancia[$k], [$cat]));
 				$this->avisar('Jóvenes Promesas', "$nombre ($n): menos de $minimo y no se acopló a la otra clase de igual distancia (" . implode(', ', $otras) . ") para eliminar (art. 14.3): $sin.", $cat);
-			} else {
-				$this->avisar('Jóvenes Promesas', "$nombre ($n): menos de $minimo y no hay otra clase JP de igual distancia con quien acoplar: sin eliminatoria, $sin (art. 14.4).", $cat);
 			}
 		}
 

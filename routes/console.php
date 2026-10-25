@@ -20,7 +20,7 @@ Artisan::command('medallero {archivo : export .ianseo del torneo} {--json : sali
 })->purpose('Medallero y pases de categoría de un torneo exportado de IANSEO, según normas FATARCO');
 
 // La misma página que ve el navegador (misma vista Blade), en texto o HTML, para revisarla sin abrir la web.
-Artisan::command('medallero:pagina {archivo : export .ianseo del torneo} {--tandas : entrega en dos tandas} {--jp-reglas-antiguas : podio por clasificación a JP sin eliminatoria} {--sin-escuela-hasta-2 : sin podio a Escuela con 2 o menos sin eliminatoria} {--adaptados-sala : podio por clasificación a P.I.2/AA2 de salón sin eliminatoria propia} {--solo-tanda= : con --tandas, solo la 1 o la 2} {--sin-anexo : sin el anexo} {--html : HTML tal cual lo sirve la web}', function (string $archivo) {
+Artisan::command('medallero:pagina {archivo : export .ianseo del torneo} {--tandas : entrega en dos tandas} {--jp-reglas-antiguas : podio propio también a las JP que eliminaron acopladas} {--sin-escuela-hasta-2 : sin podio a Escuela con 2 o menos sin eliminatoria} {--adaptados-sala : podio por clasificación a P.I.2/AA2 de salón sin eliminatoria propia} {--solo-tanda= : con --tandas, solo la 1 o la 2} {--sin-anexo : sin el anexo} {--html : HTML tal cual lo sirve la web}', function (string $archivo) {
     try {
         $informe = Informe::generar($archivo, config('medallero.normas'));
     } catch (ArchivoInvalido $e) {

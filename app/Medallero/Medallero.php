@@ -12,8 +12,9 @@ namespace App\Medallero;
 // toma la de 3 o más (o la de más arqueros). Un acople entre pares es uno en el que alguna invitada no es una
 // inclusión reglamentaria (juveniles en Mayores, 13.2.2.c / 15.3.2.c; adaptados en la convencional, 18.5.1).
 // Las categorías acopladas llevan además su podio propio por clasificación. Quedan marcados como opcionales:
-// - 'jp': todo podio JP sin eliminatoria (acoplada, con menos de 3 o porque no se eliminó): los arts. 12.4,
-//   14.3 y 14.4 solo premian las eliminatorias; se entrega únicamente con las reglas antiguas de premiación JP.
+// - 'jp': el podio propio de una JP que eliminó acoplada: en JP no hay doble medalla, se premia solo la
+//   eliminatoria de la que recibió (14.3 / 14.4); se entrega únicamente con las reglas antiguas de premiación JP.
+//   Las JP que no eliminan (por falta de arqueros o porque no se eliminó) se premian por clasificación.
 // - 'escuela': Escuela (también adaptada, 18.6) con 2 o menos sin eliminatoria: el art. 11.2 no lo hace
 //   obligatorio; por defecto se entrega.
 // - 'adaptados': en salón, P.I.2 y AA2 (que tiran en la convencional) sin eliminatoria propia: "sólo se premiará
@@ -92,7 +93,7 @@ final class Medallero
 			$p['acoplada_en'] = $p['eliminatorias'] ? [] : array_values(array_unique($huesped[$p['propia']] ?? []));
 			$p['opcional'] = match (true) {
 				$p['eliminatorias'] => null,
-				self::esJP($p['propia']) => 'jp',
+				self::esJP($p['propia']) => $p['acoplada_en'] ? 'jp' : null,
 				self::esEscuela($p['propia']) => count($porCategoria[$p['propia']] ?? []) < $minimo ? 'escuela' : null,
 				$this->t->modalidad == 'sala' && isset($this->normas['alias_division'][explode('/', $p['propia'])[0]]) => 'adaptados',
 				default => null,

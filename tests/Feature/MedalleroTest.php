@@ -118,13 +118,9 @@ class MedalleroTest extends TestCase
         $this->assertSame(0, Artisan::call('medallero:pagina', ['archivo' => $this->export('FSJ-1810-FINAL-ORO-PLATA-BRONCE.ianseo')]));
         $texto = Artisan::output();
         $this->assertStringContainsString('[BRONCE] [PASE (595)] SALVA Diego Zenon — Tira Palitos', $texto);
-        // JP con menos de 3 sin eliminatoria: por las normas no hay medallas y el pase se anuncia solo
-        $this->assertStringContainsString("Pase de categoría a I20\n\n  - [PASE (634) - MAESTRO] CASTILLO Josu — Cef 4", $texto);
-        // con las reglas antiguas recibe el oro y el pase se anuncia con él
-        Artisan::call('medallero:pagina', ['archivo' => $this->export('FSJ-1810-FINAL-ORO-PLATA-BRONCE.ianseo'), '--jp-reglas-antiguas' => true]);
-        $antiguas = Artisan::output();
-        $this->assertStringContainsString('[ORO] [PASE (634) - MAESTRO] CASTILLO Josu — Cef 4', $antiguas);
-        $this->assertStringNotContainsString('Pase de categoría a I20', $antiguas);
+        // JP con menos de 3 que no eliminó: podio por clasificación, y el pase se anuncia con la medalla
+        $this->assertStringContainsString('[ORO] [PASE (634) - MAESTRO] CASTILLO Josu — Cef 4', $texto);
+        $this->assertStringNotContainsString('Pase de categoría a I20', $texto);
     }
 
     public function test_el_pase_se_anuncia_una_sola_vez_y_con_la_medalla(): void
@@ -145,19 +141,19 @@ class MedalleroTest extends TestCase
         $this->assertSame(1, substr_count($antiguas, '[PASE (603)]'));
     }
 
-    public function test_jp_sin_eliminatoria_no_lleva_medallas_y_escuela_con_2_o_menos_si(): void
+    public function test_jp_sin_eliminatoria_y_escuela_con_2_o_menos_llevan_podio(): void
     {
         $ruta = $this->export('ADASJ263_FATARCO.ianseo');
         $pagina = function (array $opciones) use ($ruta) {
             Artisan::call('medallero:pagina', ['archivo' => $ruta] + $opciones);
             return explode('## Anexo', Artisan::output())[0];
         };
-        // por defecto: JP sin eliminatoria (aunque sean 3 o más) solo anuncia pases; Escuela con 2 o menos tiene podio
+        // por defecto: JP que no eliminó (aunque sean 3 o más) y Escuela con 2 o menos tienen podio por clasificación
         $defecto = $pagina([]);
-        $this->assertStringContainsString("Pase de categoría a I20\n\n  - [PASE (545)] CRISTALDO Sebastián", $defecto);
-        $this->assertStringNotContainsString('SANCHEZ Angel', $defecto);
+        $this->assertStringContainsString('[ORO] [PASE (545)] CRISTALDO Sebastián', $defecto);
+        $this->assertStringContainsString('[BRONCE] SANCHEZ Angel', $defecto);
         $this->assertStringContainsString('[ORO] [PASE (624)] PATANE Maximiliano Jesús', $defecto);
-        // invertidas las dos opciones
+        // sin el podio de Escuela con 2 o menos (las reglas antiguas JP no cambian a las que no eliminaron)
         $invertido = $pagina(['--jp-reglas-antiguas' => true, '--sin-escuela-hasta-2' => true]);
         $this->assertStringContainsString('[BRONCE] SANCHEZ Angel', $invertido);
         $this->assertStringContainsString('[ORO] [PASE (545)] CRISTALDO Sebastián', $invertido);

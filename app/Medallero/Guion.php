@@ -23,8 +23,8 @@ final class Guion
 	public const OPCIONALES = [
 		'jp' => [
 			'id' => 'jp-reglas-antiguas', 'defecto' => false,
-			'texto' => 'Reglas antiguas de premiación JP: podio por clasificación a las categorías sin eliminatoria, como en Mayores (las normas premian solo las eliminatorias, arts. 12.4, 14.3 y 14.4)',
-			'nota' => 'sin medallas: en JP se premia solo la eliminatoria (art. 14.4)',
+			'texto' => 'Reglas antiguas de premiación JP: podio propio por clasificación también a las categorías que eliminaron acopladas, como en Mayores (en JP no hay doble medalla: se premia solo la eliminatoria, arts. 14.3 y 14.4)',
+			'nota' => 'sin podio propio: en JP las categorías acopladas se premian solo en la eliminatoria (arts. 14.3 y 14.4)',
 		],
 		'escuela' => [
 			'id' => 'escuela-hasta-2', 'defecto' => true,
